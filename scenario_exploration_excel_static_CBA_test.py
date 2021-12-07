@@ -34,28 +34,29 @@ sns.set(rc={"figure.dpi":300})
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    results = load_results('20000_scenarios_2021-11-30.tar.gz')
+    results = load_results('1000_scenarios_2021-12-07.tar.gz')
     experiments=results[0]
     outcomes=results[1]
 
 ### SCENARIO EXPLORATION###
+sns.set_palette("deep")
 
-fig,axes = pairs_scatter(experiments,outcomes, legend=False)
+
+### Pairwise scatter plots on outcomes
+fig,axes = pairs_scatter(experiments,outcomes, legend=True, group_by="policy")
 fig.set_size_inches(15,15)
 plt.show()
 
 
 # plt.xticks(rotation=45) #rotate x-axis labels by 45 degrees.
 # plt.yticks(rotation=45) #rotate y-axis labels by 90 degrees.
-sns.set_palette("deep")
+
 ### Show hist/KDE of 
 
 # plt.axvline(-0.7, color='r', linestyle='dashed', linewidth=1)
 # plt.axhline(20, color='r', linestyle='dashed', linewidth=1)
 
 ###FEATURE SCORING ON OUTCOMES
-
-
 
 fs = feature_scoring.get_feature_scores_all(experiments, outcomes)
 plt.figure()

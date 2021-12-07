@@ -25,16 +25,19 @@ if __name__ == "__main__":
     model.default_sheet = "Indata"
     
     #Set parametric uncetainties
-    model.uncertainties = [RealParameter("F10", 0, 0.7)  
-                          ,RealParameter("F12", 0.25, 0.80)
-                          ,RealParameter("F15", 0,1)
-                          ,RealParameter("F16", 0,1)
-                          ,RealParameter("D79",.05,0.7)
+    model.uncertainties = [RealParameter("D79",.05,0.7)
                           ,RealParameter("F61",-0.3,0.30)
                           ,RealParameter("F28",0.1,0.7)
                           ,RealParameter("F38",-0.3,0.3)
                           ]
-    # copy model to use for worst case discovery (with sub set of outcomes)
+    
+    #Specification of levers
+    model.levers = [RealParameter("F10", 0, 0.7),
+                    RealParameter("F12", 0.25, 0.80),
+                    RealParameter("F15", 0,1),
+                    RealParameter("F16", 0,1)
+                    ]
+
     # specification of the outcomes
     model.outcomes = [ScalarOutcome("D66"),
                       ScalarOutcome("D67"),
@@ -44,8 +47,8 @@ if __name__ == "__main__":
                       ScalarOutcome("D71"),
                       ScalarOutcome("D72"),
                       ScalarOutcome("D73"),
-                      ScalarOutcome("D74"),
-                      ScalarOutcome("D75")
+                      #ScalarOutcome("D74"),
+                      #ScalarOutcome("D75")
                       ]  
     
     # Add policies
@@ -54,8 +57,9 @@ if __name__ == "__main__":
     #             Policy('High ambition',
     #                    model_file=r'FLUvensimV1static.vpm'),
     #                      ]
-    policies=[]
-       
+    from ema_workbench.em_framework import samplers
+    n_policies=5
+    policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())       
     #%%
     #select number of scenarios (per policy)
     nr_scenarios=1000
@@ -63,14 +67,21 @@ if __name__ == "__main__":
     #Run model - for open exploration
     import time
     tic=time.perf_counter()
-    run_with_policies=0
+    run_with_policies=1
+    use_multi=1
+    n_p=3
     if run_with_policies == 1:
-        experiments, outcomes = perform_experiments(model, nr_scenarios,policies=policies)
+        if use_multi==1:
+            with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
+                experiments, outcomes = perform_experiments(model, 
+                                                            nr_scenarios, 
+                                                            reporting_frequency=100, 
+                                                            evaluator=evaluator,policies=policies)            
+        else:
+            experiments, outcomes = perform_experiments(model, nr_scenarios,policies=policies)
     else:
         ### Run model using multiprocessing
-        use_multi=1
         if use_multi == 1:
-            n_p=3
             with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
                 experiments, outcomes = perform_experiments(model, 
                                                             nr_scenarios, 
@@ -153,18 +164,22 @@ if __name__ == "__main__":
     outcomes["Energy bio"] = outcomes.pop("D71")
     outcomes["Energy fossile"] = outcomes.pop("D72")
     outcomes["Energy el"] = outcomes.pop("D73")
-    outcomes["Total cost trucks"] = outcomes.pop("D74")
-    outcomes["Total costs cars"] = outcomes.pop("D75")
+    #outcomes["Total cost trucks"] = outcomes.pop("D74")
+    #outcomes["Total costs cars"] = outcomes.pop("D75")
     #Rename input variables
-    experiments["share HVO gas."] = experiments.pop("F10")
-    experiments["share HVO diesel"] = experiments.pop("F12")
-    experiments["km-tax light veh"] = experiments.pop("F15")
-    experiments["km-tax trucks"] = experiments.pop("F16")
+    # Uncertainties
+  
     experiments["Heavy truck el. share"] = experiments.pop("D79")
     experiments["Truck demand change"] = experiments.pop("F61")
     experiments["Car demand change"] = experiments.pop("F38")
     experiments["Car el share"] = experiments.pop("F28")
     
+    #levers
+    if run_with_policies==1:
+        experiments["share HVO gas."] = experiments.pop("F10")
+        experiments["share HVO diesel"] = experiments.pop("F12")
+        experiments["km-tax light veh"] = experiments.pop("F15")
+        experiments["km-tax trucks"] = experiments.pop("F16")
     
          # Save results?
     save_results=1
