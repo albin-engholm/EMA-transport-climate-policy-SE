@@ -34,7 +34,7 @@ sns.set(rc={"figure.dpi":300})
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    results = load_results('1000_scenarios_2021-12-07.tar.gz')
+    results = load_results('3000_scenarios_2021-12-08.tar.gz')
     experiments=results[0]
     outcomes=results[1]
 

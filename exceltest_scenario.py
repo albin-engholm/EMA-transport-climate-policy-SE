@@ -34,8 +34,8 @@ if __name__ == "__main__":
     #Specification of levers
     model.levers = [RealParameter("F10", 0, 0.7),
                     RealParameter("F12", 0.25, 0.80),
-                    RealParameter("F15", 0,1),
-                    RealParameter("F16", 0,1)
+                    RealParameter("F15", 0,3),
+                    RealParameter("F16", 0,3)
                     ]
 
     # specification of the outcomes
@@ -58,18 +58,18 @@ if __name__ == "__main__":
     #                    model_file=r'FLUvensimV1static.vpm'),
     #                      ]
     from ema_workbench.em_framework import samplers
-    n_policies=5
+    n_policies=8
     policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())       
     #%%
     #select number of scenarios (per policy)
-    nr_scenarios=1000
+    nr_scenarios=3000
     
     #Run model - for open exploration
     import time
     tic=time.perf_counter()
     run_with_policies=1
     use_multi=1
-    n_p=3
+    n_p=8
     if run_with_policies == 1:
         if use_multi==1:
             with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
