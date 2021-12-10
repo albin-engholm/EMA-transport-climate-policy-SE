@@ -11,7 +11,8 @@ e.g. scenario_exploration_excel_static.py'
 """ 
 import numpy as np
 import pandas as pd
-from ema_workbench import (RealParameter, TimeSeriesOutcome, ScalarOutcome, ema_logging,
+from ema_workbench import (RealParameter, CategoricalParameter, TimeSeriesOutcome, 
+                           ScalarOutcome, ema_logging,
                            perform_experiments)
 
 from ema_workbench.connectors.excel import ExcelModel
@@ -35,7 +36,8 @@ if __name__ == "__main__":
     model.levers = [RealParameter("F10", 0, 0.7),
                     RealParameter("F12", 0.25, 0.80),
                     RealParameter("F15", 0,3),
-                    RealParameter("F16", 0,3)
+                    RealParameter("F16", 0,3),
+                    CategoricalParameter("F17",["1 Beslutad politik","2 Mer ambitios politik"])
                     ]
 
     # specification of the outcomes
@@ -51,25 +53,25 @@ if __name__ == "__main__":
                       #ScalarOutcome("D75")
                       ]  
     
-    # Add policies
-    # policies = [Policy('Low ambition',
-    #                    model_file=r'FLUvensimV1basecase.vpm'),
-    #             Policy('High ambition',
-    #                    model_file=r'FLUvensimV1static.vpm'),
-    #                      ]
+    # Specify policies
     from ema_workbench.em_framework import samplers
-    n_policies=8
+    from ema_workbench.em_framework.parameters import Policy
+    n_policies=4
     policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())       
     #%%
     #select number of scenarios (per policy)
-    nr_scenarios=3000
+    nr_scenarios=2000
     
     #Run model - for open exploration
-    import time
-    tic=time.perf_counter()
+    
+    #Simulation settings
     run_with_policies=1
     use_multi=1
     n_p=8
+    
+    #Run
+    import time
+    tic=time.perf_counter()
     if run_with_policies == 1:
         if use_multi==1:
             with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
@@ -151,13 +153,11 @@ if __name__ == "__main__":
         paraxes.plot(data)
         #paraxes.invert_axis('max_P')
         plt.show()
-
-     
      #%%
 
     #Rename outcome variables
-    outcomes["CO2 change truck"] = outcomes.pop("D66")
-    outcomes["CO2 change tot"] = outcomes.pop("D67")
+    outcomes["CO2 TTW change truck"] = outcomes.pop("D66")
+    outcomes["CO2 TTW change tot"] = outcomes.pop("D67")
     outcomes["VKT trucks"] = outcomes.pop("D68")
     outcomes["VKT tot"] = outcomes.pop("D69")
     outcomes["Energy tot"] = outcomes.pop("D70")
@@ -166,6 +166,7 @@ if __name__ == "__main__":
     outcomes["Energy el"] = outcomes.pop("D73")
     #outcomes["Total cost trucks"] = outcomes.pop("D74")
     #outcomes["Total costs cars"] = outcomes.pop("D75")
+    
     #Rename input variables
     # Uncertainties
   
@@ -180,14 +181,19 @@ if __name__ == "__main__":
         experiments["share HVO diesel"] = experiments.pop("F12")
         experiments["km-tax light veh"] = experiments.pop("F15")
         experiments["km-tax trucks"] = experiments.pop("F16")
-    
+        experiments["ICE ambition level"] = experiments.pop("F17")
          # Save results?
     save_results=1
     if save_results==1:
         from datetime import date    
         from ema_workbench import save_results
-        filename=str(nr_scenarios)+'_scenarios_'+str(date.today())+'.tar.gz'
+        if run_with_policies==1:
+            filename=str(nr_scenarios)+'_scenarios_'+str(n_policies)+"_policies_"+str(date.today())
+        else:
+            filename=str(nr_scenarios)+'_scenarios_'+str(date.today())
+        filename=filename+'.tar.gz'
         save_results([experiments,outcomes], filename)
         #df.to_hdf('data.h5', key='df', mode='w')    
+        
 
 
