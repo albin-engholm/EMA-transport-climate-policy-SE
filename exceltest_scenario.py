@@ -9,9 +9,8 @@ Current version has not implement policies for the specific model
 Results are saved and can be loaded for analysis in separate script - 
 e.g. scenario_exploration_excel_static.py'
 """ 
-import numpy as np
-import pandas as pd
-from ema_workbench import (RealParameter, CategoricalParameter, TimeSeriesOutcome, 
+
+from ema_workbench import (RealParameter, CategoricalParameter, 
                            ScalarOutcome, ema_logging,
                            perform_experiments)
 
@@ -25,39 +24,66 @@ if __name__ == "__main__":
                        model_file='trv_scenario2.xlsx')
     model.default_sheet = "Indata"
     
-    #Set parametric uncetainties
-    model.uncertainties = [RealParameter("D79",.05,0.7)
-                          ,RealParameter("F61",-0.3,0.30)
-                          ,RealParameter("F28",0.1,0.7)
-                          ,RealParameter("F38",-0.3,0.3)
-                          ]
     
+     #%% Specify inputsde
+    #Set parametric uncetainties
+    model.uncertainties = [RealParameter("Heavy truck el share",
+                                         .05,0.7
+                                         ,variable_name="D79")
+                          ,RealParameter("Truck demand change",
+                                         -0.3,0.30,
+                                         variable_name="F61")
+                          ,RealParameter("Car demand change",
+                                         0.1,0.7,
+                                         variable_name="F28")
+                          ,RealParameter("Car el share",
+                                         -0.3,0.3
+                                         ,variable_name="F38")
+                          ]
     #Specification of levers
-    model.levers = [RealParameter("F10", 0, 0.7),
-                    RealParameter("F12", 0.25, 0.80),
-                    RealParameter("F15", 0,3),
-                    RealParameter("F16", 0,3),
-                    CategoricalParameter("F17",["1 Beslutad politik","2 Mer ambitios politik"])
+    model.levers = [RealParameter("Share HVO gasoline", 
+                                  0, 0.7,
+                                  variable_name="F10"),
+                    RealParameter("Share HVO diesel",
+                                  0.25, 0.80,
+                                  variable_name="F12"),
+                    RealParameter("km-tax light vehicles",
+                                  0,3
+                                  ,variable_name="F15"),
+                    RealParameter("km-tax trucks",
+                                  0,3
+                                  ,variable_name="F16"),
+                    CategoricalParameter("ICE CO2 reduction ambition level",
+                                         ["1 Beslutad politik","2 Mer ambitios politik"]
+                                         ,variable_name="F17")
                     ]
-
     # specification of the outcomes
-    model.outcomes = [ScalarOutcome("D66"),
-                      ScalarOutcome("D67"),
-                      ScalarOutcome("D68"),
-                      ScalarOutcome("D69"),
-                      ScalarOutcome("D70"),
-                      ScalarOutcome("D71"),
-                      ScalarOutcome("D72"),
-                      ScalarOutcome("D73"),
-                      #ScalarOutcome("D74"),
-                      #ScalarOutcome("D75")
+    model.outcomes = [ScalarOutcome("CO2 TTW change trucks",
+                                    variable_name="D66"),
+                      ScalarOutcome("CO2 TTW change total", 
+                                    variable_name="D67"),
+                      ScalarOutcome("VKT trucks", 
+                                    variable_name="D68"),
+                      ScalarOutcome("Energy tot", 
+                                    variable_name="D69"),
+                      ScalarOutcome("Energy total", 
+                                    variable_name="D70"),
+                      ScalarOutcome("Energy bio total", 
+                                    variable_name="D71"),
+                      ScalarOutcome("Energy fossile total", 
+                                    variable_name="D72"),
+                      ScalarOutcome("Energy el total",
+                                    variable_name="D73")
+                      #ScalarOutcome("Total cost trucks",
+                                    #variable_name="D74"),
+                      #ScalarOutcome("Total cost cars",
+                                  #  variable_name="D75")
                       ]  
     
     # Specify policies
-    from ema_workbench.em_framework import samplers
-    from ema_workbench.em_framework.parameters import Policy
-    n_policies=4
-    policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())       
+   # from ema_workbench.em_framework import samplers
+    n_policies=8
+    #policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())       
     #%%
     #select number of scenarios (per policy)
     nr_scenarios=2000
@@ -78,9 +104,12 @@ if __name__ == "__main__":
                 experiments, outcomes = perform_experiments(model, 
                                                             nr_scenarios, 
                                                             reporting_frequency=100, 
-                                                            evaluator=evaluator,policies=policies)            
+                                                            evaluator=evaluator,
+                                                            policies=n_policies)            
         else:
-            experiments, outcomes = perform_experiments(model, nr_scenarios,policies=policies)
+            experiments, outcomes = perform_experiments(model, nr_scenarios,
+                                                        policies=n_policies,
+                                                        reporting_frequency=100)
     else:
         ### Run model using multiprocessing
         if use_multi == 1:
@@ -132,8 +161,6 @@ if __name__ == "__main__":
         #%%
         from ema_workbench.analysis import parcoords
         import matplotlib.pyplot as plt
-
-
         fig, (ax1, ax2) = plt.subplots(ncols=2, sharex=True, figsize=(8,4))
         ax1.plot(convergence.nfe, convergence.epsilon_progress)
         ax1.set_ylabel('$\epsilon$-progress')
@@ -153,35 +180,7 @@ if __name__ == "__main__":
         paraxes.plot(data)
         #paraxes.invert_axis('max_P')
         plt.show()
-     #%%
 
-    #Rename outcome variables
-    outcomes["CO2 TTW change truck"] = outcomes.pop("D66")
-    outcomes["CO2 TTW change tot"] = outcomes.pop("D67")
-    outcomes["VKT trucks"] = outcomes.pop("D68")
-    outcomes["VKT tot"] = outcomes.pop("D69")
-    outcomes["Energy tot"] = outcomes.pop("D70")
-    outcomes["Energy bio"] = outcomes.pop("D71")
-    outcomes["Energy fossile"] = outcomes.pop("D72")
-    outcomes["Energy el"] = outcomes.pop("D73")
-    #outcomes["Total cost trucks"] = outcomes.pop("D74")
-    #outcomes["Total costs cars"] = outcomes.pop("D75")
-    
-    #Rename input variables
-    # Uncertainties
-  
-    experiments["Heavy truck el. share"] = experiments.pop("D79")
-    experiments["Truck demand change"] = experiments.pop("F61")
-    experiments["Car demand change"] = experiments.pop("F38")
-    experiments["Car el share"] = experiments.pop("F28")
-    
-    #levers
-    if run_with_policies==1:
-        experiments["share HVO gas."] = experiments.pop("F10")
-        experiments["share HVO diesel"] = experiments.pop("F12")
-        experiments["km-tax light veh"] = experiments.pop("F15")
-        experiments["km-tax trucks"] = experiments.pop("F16")
-        experiments["ICE ambition level"] = experiments.pop("F17")
          # Save results?
     save_results=1
     if save_results==1:
@@ -192,8 +191,7 @@ if __name__ == "__main__":
         else:
             filename=str(nr_scenarios)+'_scenarios_'+str(date.today())
         filename=filename+'.tar.gz'
-        save_results([experiments,outcomes], filename)
-        #df.to_hdf('data.h5', key='df', mode='w')    
+        save_results([experiments,outcomes], "./output_data/"+filename)  
         
 
 

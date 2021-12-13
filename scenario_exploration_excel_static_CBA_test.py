@@ -7,9 +7,6 @@ Created on Thu Sep 23 10:20:38 2021
 
 import numpy as np
 import pandas as pd
-from ema_workbench import (RealParameter, TimeSeriesOutcome, ScalarOutcome, ema_logging,
-                           perform_experiments)
-
 import matplotlib.pyplot as plt
 SMALL_SIZE = 6
 MEDIUM_SIZE = 8
@@ -24,19 +21,19 @@ plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rcParams['figure.dpi'] = 300
 
-from ema_workbench.analysis.pairs_plotting import (pairs_lines, pairs_scatter,
-                                               pairs_density)
+from ema_workbench.analysis.pairs_plotting import ( pairs_scatter,
+                                               )
 from ema_workbench.analysis import feature_scoring
 import seaborn as sns
 sns.set(rc={"figure.dpi":300})
 
 #Should previously saved result data be loaded? If not, data from workspace is used
 
-n_policies=4
+n_policies=10
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    results = load_results('2000_scenarios_'+str(n_policies)+'_policies_2021-12-09.tar.gz')
+    results = load_results('./output_data/10_scenarios_'+str(n_policies)+'_policies_2021-12-13.tar.gz')
     experiments=results[0]
     outcomes=results[1]
     #%%
@@ -70,7 +67,7 @@ fig.tight_layout()
 plt.show()
 
 #Parcoords plot, requires manual work 
-parcoords=1
+parcoords=0
 if parcoords == 1:
     df_policies["ICE ambition level"]=df_policies["ICE ambition level"].cat.as_ordered()
     df_policies["policy"]=df_policies["policy"].cat.as_ordered()
@@ -120,8 +117,8 @@ fail_criterion_CO2=-0.7
 fail_criterion_bio=20
 #Prepare data, x and y arrays
 x = experiments
-y1=outcomes['CO2 TTW change tot']>fail_criterion_CO2
-y2=outcomes['Energy bio']>fail_criterion_bio
+y1=outcomes['CO2 TTW change total']>fail_criterion_CO2
+y2=outcomes['Energy bio total']>fail_criterion_bio
 y3=[0]*len(x)
 for j in range(len(y1)):
     if y1[j]==True or y2[j]==True:
@@ -139,15 +136,15 @@ share_success=1-share_fail
 
 import statistics
 #Plot hist/KDE on criterions
-sns.displot(x='CO2 TTW change tot', data=outcomes, kde=True)
-plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change tot']), facecolor='red', alpha=0.2,edgecolor='None')
-plt.axvline(statistics.mean(outcomes['CO2 TTW change tot']),color="red")
+sns.displot(x='CO2 TTW change total', data=outcomes, kde=True)
+plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), facecolor='red', alpha=0.2,edgecolor='None')
+plt.axvline(statistics.mean(outcomes['CO2 TTW change total']),color="red")
 
-sns.displot(x='Energy bio', data=outcomes, kde=True)
-plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio']), facecolor='red', alpha=0.2,edgecolor='None')
-plt.axvline(statistics.mean(outcomes['Energy bio']),color="red")
+sns.displot(x='Energy bio total', data=outcomes, kde=True)
+plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio total']), facecolor='red', alpha=0.2,edgecolor='None')
+plt.axvline(statistics.mean(outcomes['Energy bio total']),color="red")
 
-g=sns.displot(x='CO2 TTW change tot', y='Energy bio', data=outcomes)
+g=sns.displot(x='CO2 TTW change total', y='Energy bio total', data=outcomes)
 ylim=g.ax.get_ylim()
 xlim=g.ax.get_xlim()
 plt.axvspan(fail_criterion_CO2, xlim[1],facecolor='red', alpha=0.2, edgecolor='none')
@@ -179,7 +176,6 @@ plt.show()
 
 #Regional sensitivty analysis, # model is the same across experiments
 from ema_workbench.analysis import regional_sa
-from numpy.lib import recfunctions as rf
 sns.set_style('white')
 x_copy = experiments.copy()
 x_copy = x_copy.drop('model', axis=1)
@@ -211,10 +207,10 @@ plt.show()
 #Choose point for inspection
 i1=round((len(box1.peeling_trajectory.T.columns)-1)/2)
 #or choose box manually
-i1=27
+#i1=27
 box1.inspect(i1)
 box1.inspect(i1, style='graph')
-plt.show()
+box1.show_ppt()
 ax=box1.show_pairs_scatter(i1)
 
 plt.show()
