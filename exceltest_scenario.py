@@ -33,10 +33,10 @@ if __name__ == "__main__":
                           ,RealParameter("Truck demand change",
                                          -0.3,0.30,
                                          variable_name="F61")
-                          ,RealParameter("Car demand change",
+                          ,RealParameter("Car el share",
                                          0.1,0.7,
                                          variable_name="F28")
-                          ,RealParameter("Car el share",
+                          ,RealParameter("Car demand change",
                                          -0.3,0.3
                                          ,variable_name="F38")
                           ]
@@ -82,18 +82,18 @@ if __name__ == "__main__":
     
     # Specify policies
    # from ema_workbench.em_framework import samplers
-    n_policies=8
+    n_policies=100
     #policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())       
     #%%
     #select number of scenarios (per policy)
-    nr_scenarios=2000
+    nr_scenarios=1000
     
     #Run model - for open exploration
     
     #Simulation settings
     run_with_policies=1
     use_multi=1
-    n_p=8
+    n_p=4
     
     #Run
     import time
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         paraxes.plot(data)
         #paraxes.invert_axis('max_P')
         plt.show()
-
+#%%
          # Save results?
     save_results=1
     if save_results==1:
@@ -190,8 +190,8 @@ if __name__ == "__main__":
             filename=str(nr_scenarios)+'_scenarios_'+str(n_policies)+"_policies_"+str(date.today())
         else:
             filename=str(nr_scenarios)+'_scenarios_'+str(date.today())
-        filename=filename+'.tar.gz'
-        save_results([experiments,outcomes], "./output_data/"+filename)  
-        
-
-
+        filename1=filename+'.tar.gz'
+        save_results([experiments,outcomes], "./output_data/"+filename1)
+        import pickle
+        filename2=filename+'model_'+".p"
+        pickle.dump(model,open("./output_data/"+filename2,"wb"))

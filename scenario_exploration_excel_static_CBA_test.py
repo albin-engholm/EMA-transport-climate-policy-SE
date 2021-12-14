@@ -8,6 +8,11 @@ Created on Thu Sep 23 10:20:38 2021
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+from ema_workbench.analysis.pairs_plotting import (pairs_scatter)
+from ema_workbench.analysis import feature_scoring
+
+#%% plotting settings
 SMALL_SIZE = 6
 MEDIUM_SIZE = 8
 BIGGER_SIZE = 10
@@ -21,22 +26,24 @@ plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rcParams['figure.dpi'] = 300
 
-from ema_workbench.analysis.pairs_plotting import ( pairs_scatter,
-                                               )
-from ema_workbench.analysis import feature_scoring
-import seaborn as sns
 sns.set(rc={"figure.dpi":300})
-
+#%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
 
-n_policies=10
+n_policies=100
+n_scenarios=1000
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    results = load_results('./output_data/10_scenarios_'+str(n_policies)+'_policies_2021-12-13.tar.gz')
+    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2021-12-14'
+    results = load_results(t1+'.tar.gz')
     experiments=results[0]
     outcomes=results[1]
-    #%%
+    df_outcomes=pd.DataFrame(outcomes)
+    df_outcomes['policy'] = experiments ["policy"]
+    import pickle
+    model=pickle.load( open(t1+"model_.p", "rb" ) )
+    #%% Fix nan bug 
     if experiments.isnull().values.any(): #Check if experiments contains nans. 
         #Assume it is the last row issue, drop last row (Experiment)
         experiments_as_loaded=experiments
@@ -47,14 +54,14 @@ if load_results==1:
         outcomes_as_loaded=outcomes
         outcomes=new.to_dict("series")
         
-#%% Extract policies
-df=experiments
-drop_index = range(3,len(df.columns)-n_policies-1)
-print (drop_index)
-df=df.drop(df.columns[drop_index], axis=1)
-df=df.drop(columns="scenario")
-df=df.drop(columns="model")
-df_policies=df.drop_duplicates()
+#%% Create a df with policies used
+df_policies=pd.DataFrame()
+df_policies["policy"]=experiments["policy"]
+for i in model.levers.keys():
+    df_policies[str(i)]=experiments[str(i)]
+df_policies=df_policies.drop_duplicates()
+df_policies.reset_index(drop=True, inplace=True)
+#%%Visualize policies
 
 #Plot table of policies
 fig, ax = plt.subplots()
@@ -66,23 +73,42 @@ ax.table(cellText=df_policies.values, colLabels=df_policies.columns, loc='center
 fig.tight_layout()
 plt.show()
 
+# Visualize each policy as a dot diagram
+sns.set_theme(style="whitegrid")
+g = sns.PairGrid(df_policies.sort_values("policy", ascending=False),
+                 x_vars=df_policies.columns[1:], y_vars=["policy"],
+                 height=5, aspect=.5)
+
+g.map(sns.stripplot, size=10, orient="h", jitter=False,
+      palette="flare_r", linewidth=1, edgecolor="w")
+for ax, title in zip(g.axes.flat, df_policies.columns[1:]):
+
+    # Set a different title for each axes
+    ax.set(title=title)
+    # Make the grid horizontal instead of vertical
+    ax.xaxis.grid(False)
+    ax.yaxis.grid(True)
+sns.despine(left=True, bottom=True)
+
+
 #Parcoords plot, requires manual work 
 parcoords=0
 if parcoords == 1:
-    df_policies["ICE ambition level"]=df_policies["ICE ambition level"].cat.as_ordered()
+    df_policies["ICE CO2 reduction ambition level"]=df_policies["ICE CO2 reduction ambition level"].cat.as_ordered()
     df_policies["policy"]=df_policies["policy"].cat.as_ordered()
-    a=df_policies["ICE ambition level"].unique()
+    a=df_policies["ICE CO2 reduction ambition level"].unique()
     b=[]
     for i in range(len(a)):
         b.append(a[i])
     #df_policies.at[0,'ICE ambition level']= b
-    df_policies_parcoords=df_policies.drop(columns="ICE ambition level")
-    df_policies_parcoords=df_policies_parcoords.drop(columns="policy")
+    df_policies_parcoords=df_policies.drop(columns="ICE CO2 reduction ambition level")
+    df_policies_parcoords=df_policies
     from ema_workbench.analysis import parcoords
     limits = parcoords.get_limits(df_policies_parcoords)
     paraxes = parcoords.ParallelAxes(limits)
     paraxes.plot(df_policies_parcoords)
     plt.legend(df_policies["policy"])
+
 #%%
 
 
@@ -95,14 +121,9 @@ fig,axes = pairs_scatter(experiments,outcomes, legend=True, group_by="policy")
 fig.set_size_inches(15,15)
 plt.show()
 
+# fig,axes =  sns.pairplot(data=df_outcomes, hue="policy")
+# fig.set_size_inches(15,15)
 
-# plt.xticks(rotation=45) #rotate x-axis labels by 45 degrees.
-# plt.yticks(rotation=45) #rotate y-axis labels by 90 degrees.
-
-### Show hist/KDE of 
-
-# plt.axvline(-0.7, color='r', linestyle='dashed', linewidth=1)
-# plt.axhline(20, color='r', linestyle='dashed', linewidth=1)
 
 ###FEATURE SCORING ON OUTCOMES
 
@@ -210,9 +231,9 @@ i1=round((len(box1.peeling_trajectory.T.columns)-1)/2)
 #i1=27
 box1.inspect(i1)
 box1.inspect(i1, style='graph')
+plt.show()
 box1.show_ppt()
 ax=box1.show_pairs_scatter(i1)
-
 plt.show()
 
 #Find 2nd box
@@ -231,3 +252,57 @@ box2.show_pairs_scatter(i2)
 plt.show()
 
 coverage_2boxes=box1.coverage+box2.coverage
+
+
+
+#%%
+# #%%
+# # ------- PART 1: Define a function that do a plot for one line of the dataset!
+ 
+# def make_spider( row, title, color):
+#     from math import pi
+#     # number of variable
+#     categories=list(df_policies)[1:]
+#     N = len(categories)
+
+#     # What will be the angle of each axis in the plot? (we divide the plot / number of variable)
+#     angles = [n / float(N) * 2 * pi for n in range(N)]
+#     angles += angles[:1]
+
+#     # Initialise the spider plot
+#     ax = plt.subplot(3,3,row+1, polar=True, )
+
+#     # If you want the first axis to be on top:
+#     ax.set_theta_offset(pi / 2)
+#     ax.set_theta_direction(-1)
+
+#     # Draw one axe per variable + add labels labels yet
+#     plt.xticks(angles[:-1], categories, color='grey', size=8)
+
+#     # Draw ylabels
+#     ax.set_rlabel_position(0)
+#     plt.yticks([10,20,30], ["10","20","30"], color="grey", size=7)
+#     plt.ylim(0,5)
+
+#     # Ind1
+#     values=df_policies.loc[row].drop('policy').values.flatten().tolist()
+#     values += values[:1]
+#     ax.plot(angles, values, color=color, linewidth=2, linestyle='solid')
+#     ax.fill(angles, values, color=color, alpha=0.4)
+
+#     # Add a title
+#     plt.title(title, size=11, color=color, y=1.1)
+
+    
+# # ------- PART 2: Apply the function to all individuals
+# # initialize the figure
+# my_dpi=96
+# plt.figure(figsize=(1000/my_dpi, 1000/my_dpi), dpi=my_dpi)
+ 
+# # Create a color palette:
+# my_palette = plt.cm.get_cmap("Set2", len(df_policies.index))
+ 
+# # Loop to plot
+# for row in range(0, len(df_policies.index)):
+#     print(row)
+#     make_spider( row=row, title='policy '+str(df_policies['policy'][row]), color=my_palette(row))
