@@ -30,19 +30,20 @@ sns.set(rc={"figure.dpi":300})
 #%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
 
-n_policies=100
-n_scenarios=1000
+n_policies=2
+n_scenarios=100
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2021-12-14'
+    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2021-12-17'
     results = load_results(t1+'.tar.gz')
     experiments=results[0]
     outcomes=results[1]
     df_outcomes=pd.DataFrame(outcomes)
-    df_outcomes['policy'] = experiments ["policy"]
     import pickle
     model=pickle.load( open(t1+"model_.p", "rb" ) )
+    df_full=pd.concat([experiments,df_outcomes],axis=1,join="inner") #DF with both experiments and outcomes
+    df_outcomes['policy'] = experiments ["policy"]
     #%% Fix nan bug 
     if experiments.isnull().values.any(): #Check if experiments contains nans. 
         #Assume it is the last row issue, drop last row (Experiment)
@@ -61,6 +62,8 @@ for i in model.levers.keys():
     df_policies[str(i)]=experiments[str(i)]
 df_policies=df_policies.drop_duplicates()
 df_policies.reset_index(drop=True, inplace=True)
+
+
 #%%Visualize policies
 
 #Plot table of policies
@@ -72,17 +75,16 @@ ax.axis('tight')
 ax.table(cellText=df_policies.values, colLabels=df_policies.columns, loc='center')
 fig.tight_layout()
 plt.show()
-
+#%%
 # Visualize each policy as a dot diagram
 sns.set_theme(style="whitegrid")
 g = sns.PairGrid(df_policies.sort_values("policy", ascending=False),
                  x_vars=df_policies.columns[1:], y_vars=["policy"],
-                 height=5, aspect=.5)
+                 palette="colorblind", height=10, aspect=.5)
 
-g.map(sns.stripplot, size=10, orient="h", jitter=False,
-      palette="flare_r", linewidth=1, edgecolor="w")
+g.map(sns.stripplot, size=10, orient="h", jitter=False, linewidth=1,
+      edgecolor="w")
 for ax, title in zip(g.axes.flat, df_policies.columns[1:]):
-
     # Set a different title for each axes
     ax.set(title=title)
     # Make the grid horizontal instead of vertical
@@ -90,7 +92,7 @@ for ax, title in zip(g.axes.flat, df_policies.columns[1:]):
     ax.yaxis.grid(True)
 sns.despine(left=True, bottom=True)
 
-
+#%%
 #Parcoords plot, requires manual work 
 parcoords=0
 if parcoords == 1:
@@ -108,6 +110,7 @@ if parcoords == 1:
     paraxes = parcoords.ParallelAxes(limits)
     paraxes.plot(df_policies_parcoords)
     plt.legend(df_policies["policy"])
+
 
 #%%
 
@@ -154,24 +157,27 @@ y=np.array(y3,dtype=bool)
 n_fail = np.count_nonzero(y)
 share_fail=n_fail/len(y)
 share_success=1-share_fail
-
+#%%
 import statistics
 #Plot hist/KDE on criterions
-sns.displot(x='CO2 TTW change total', data=outcomes, kde=True)
-plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), facecolor='red', alpha=0.2,edgecolor='None')
+sns.displot(x='CO2 TTW change total', data=df_full, hue="policy",kde=True)
+plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
+            facecolor='red', alpha=0.2,edgecolor='None')
 plt.axvline(statistics.mean(outcomes['CO2 TTW change total']),color="red")
 
-sns.displot(x='Energy bio total', data=outcomes, kde=True)
-plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio total']), facecolor='red', alpha=0.2,edgecolor='None')
+sns.displot(x='Energy bio total', data=df_full, hue="policy", kde=True)
+plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
+            facecolor='red', alpha=0.2,edgecolor='None')
 plt.axvline(statistics.mean(outcomes['Energy bio total']),color="red")
 
-g=sns.displot(x='CO2 TTW change total', y='Energy bio total', data=outcomes)
+g=sns.displot(x='CO2 TTW change total', y='Energy bio total', 
+              data=df_full, hue="policy", alpha=0.5)
 ylim=g.ax.get_ylim()
 xlim=g.ax.get_xlim()
 plt.axvspan(fail_criterion_CO2, xlim[1],facecolor='red', alpha=0.2, edgecolor='none')
 plt.axvspan(xlim[0],fail_criterion_CO2,fail_criterion_bio/ylim[1],facecolor='red', alpha=0.2,edgecolor='none')
 
-
+#%%
 
 
 # Feature scoring on scenario disocvery data (what ucnertainties drive fail/success of outcomes)

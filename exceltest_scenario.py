@@ -41,21 +41,22 @@ if __name__ == "__main__":
                                          ,variable_name="F38")
                           ]
     #Specification of levers
-    model.levers = [RealParameter("Share HVO gasoline", 
+    model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
+                                         ["1 Beslutad politik","2 Mer ambitios politik"]
+                                         ,variable_name="F17"),
+                    RealParameter("Share HVO diesel",
+                                  0, 0.80,
+                                  variable_name="F12"),
+                    RealParameter("Share HVO gasoline", 
                                   0, 0.7,
                                   variable_name="F10"),
-                    RealParameter("Share HVO diesel",
-                                  0.25, 0.80,
-                                  variable_name="F12"),
                     RealParameter("km-tax light vehicles",
                                   0,3
                                   ,variable_name="F15"),
                     RealParameter("km-tax trucks",
                                   0,3
                                   ,variable_name="F16"),
-                    CategoricalParameter("ICE CO2 reduction ambition level",
-                                         ["1 Beslutad politik","2 Mer ambitios politik"]
-                                         ,variable_name="F17")
+
                     ]
     # specification of the outcomes
     model.outcomes = [ScalarOutcome("CO2 TTW change trucks",
@@ -80,19 +81,36 @@ if __name__ == "__main__":
                                   #  variable_name="D75")
                       ]  
     
-    # Specify policies
-   # from ema_workbench.em_framework import samplers
-    n_policies=100
-    #policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())       
+    #%% Specify policies
+    from ema_workbench.em_framework import samplers
+    n_policies=2
+    policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())   
+    #%% manual specification of policies
+    # overide the pre-determined policies
+    manual_policies=1
+    if manual_policies==1:
+        policy1=(1,    #ICE reduction ambition level [0=low, 1=high]
+                 0.49,  #Share HVO diesel
+                 0.49,  #Share HVO gasoline 
+                 0,  #km-tax light vehicles
+                 0) #km-tax trucks
+        policy2=(1,
+                 0.2,
+                 0.2,
+                 0.2,
+                 0.2)
+        all_policies=[policy1,policy2]
+        policies.designs=all_policies
+        policy_names=["B - bio fuels","Strategy 2"]
     #%%
     #select number of scenarios (per policy)
-    nr_scenarios=1000
+    nr_scenarios=100
     
     #Run model - for open exploration
     
     #Simulation settings
     run_with_policies=1
-    use_multi=1
+    use_multi=0
     n_p=4
     
     #Run
@@ -105,10 +123,10 @@ if __name__ == "__main__":
                                                             nr_scenarios, 
                                                             reporting_frequency=100, 
                                                             evaluator=evaluator,
-                                                            policies=n_policies)            
+                                                            policies=policies)            
         else:
             experiments, outcomes = perform_experiments(model, nr_scenarios,
-                                                        policies=n_policies,
+                                                        policies=policies,
                                                         reporting_frequency=100)
     else:
         ### Run model using multiprocessing
@@ -126,7 +144,13 @@ if __name__ == "__main__":
     print("Runtime [s]= " +str(toc-tic))
     print("Runtime [h]= " +str(round((toc-tic)/3600,1)))
     print("Runtime per experiment [s]= " +str((toc-tic)/len(experiments)))
-    
+    #%% rename policies if manual policies are used 
+    if manual_policies ==1:
+        j=0
+        for i in experiments["policy"].unique():
+            print(i)
+            experiments.loc[experiments['policy'] == i, 'policy'] = policy_names[j]
+            j=j+1
     #%%
     #Run model for wost case discovery
     run_worstcase=0
