@@ -37,7 +37,7 @@ n_scenarios=500
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2021-12-23'
+    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2022-01-25'
     results = load_results(t1+'.tar.gz')
     experiments=results[0]
     outcomes=results[1]
@@ -124,18 +124,18 @@ fig.set_size_inches(15,15)
 plt.show()
 
 #%% mega plot
-df_full2=df_full.drop(columns=["ICE CO2 reduction ambition level",
-                               "Bus energy consumption","model","scenario",
-                               "Share FAME diesel","Share ethanol gasoline",
-                               "Transport efficient society trucks",
-                               "Transport efficient society light vehicles",
-                               "Additional energy efficiency trucks",
-                               "Additional energy efficiency light vehicles",
-                               "km-tax light vehicles",
-                               "km-tax trucks"]
-                      )
-fig,axes =  sns.pairplot(data=df_full2, hue="policy")
-fig.set_size_inches(15,15)
+# df_full2=df_full.drop(columns=["ICE CO2 reduction ambition level",
+#                                "Bus energy consumption","model","scenario",
+#                                "Share FAME diesel","Share ethanol gasoline",
+#                                "Transport efficient society trucks",
+#                                "Transport efficient society light vehicles",
+#                                "Additional energy efficiency trucks",
+#                                "Additional energy efficiency light vehicles",
+#                                "km-tax light vehicles",
+#                                "km-tax trucks"]
+#                       )
+# fig,axes =  sns.pairplot(data=df_full2, hue="policy")
+# fig.set_size_inches(15,15)
 #%%
 
 ###FEATURE SCORING ON OUTCOMES
@@ -190,12 +190,14 @@ sns.scatterplot(x='Car el share', y='Energy bio total',
 plt.show()
 #Plot hist/KDE on criterions
 sns.displot(x='CO2 TTW change total', data=df_full, hue="policy",kde=True)
-plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
-            facecolor='red', alpha=0.2,edgecolor='None')
-plt.axvline(statistics.mean(outcomes['CO2 TTW change total']),color="black", 
+#plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
+#            facecolor='red', alpha=0.2,edgecolor='None')
+#plt.axvline(statistics.mean(outcomes['CO2 TTW change total']),color="black", 
+#            ls="--")
+plt.axvline(fail_criterion_CO2,color="black", 
             ls="--")
-plt.legend (["Strategy 1","Strategy 2","Strategy 3","Strategy 4","Strategy 5",
-            "Strategy 6","Strategy 7"])
+plt.legend (["B","C1","C2","C3","C4",
+            "D1","D2","D3"])
 
 sns.displot(x='Energy bio total', data=df_full, hue="policy", kde=True)
 plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
@@ -219,14 +221,14 @@ plt.figure()
 fig=sns.heatmap(fs_discovery, cmap='viridis', annot=True)
 #%%
 #Scatter pair plot for all uncertainties and whether or not target is met
-x_copy2 = experiments.copy()
-x_copy2= x_copy2.drop('scenario', axis=1)
-x_copy2["Target not met"]=y
-g= sns.PairGrid(x_copy2, hue="Target not met")
-g.map_diag(sns.kdeplot, shade=True)
-g.map_offdiag(plt.scatter,edgecolor="white",alpha=0.5)
-g.add_legend()
-g.fig.set_size_inches(20,20)
+# x_copy2 = experiments.copy()
+# x_copy2= x_copy2.drop('scenario', axis=1)
+# x_copy2["Target not met"]=y
+# g= sns.PairGrid(x_copy2, hue="Target not met")
+# g.map_diag(sns.kdeplot, shade=True)
+# g.map_offdiag(plt.scatter,edgecolor="white",alpha=0.5)
+# g.add_legend()
+# g.fig.set_size_inches(20,20)
 #%%
 #Dimensional stacking
 from ema_workbench.analysis import dimensional_stacking

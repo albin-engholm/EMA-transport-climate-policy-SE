@@ -39,12 +39,15 @@ if __name__ == "__main__":
                           ,RealParameter("Car demand change",
                                          -0.3,0.3
                                          ,variable_name="F38")
-                          ,RealParameter("Diesel price",
-                                         10,18,
-                                         variable_name="F28")
-                          ,RealParameter("Electricity price",
-                                         .5,4
-                                         ,variable_name="F38")
+                          ,RealParameter("Fossile price adjustment",
+                                         0.75,1.5,
+                                         variable_name="Modell - Drivmedelpriser!G5")
+                          ,RealParameter("Biofuel price adjustment",
+                                         0.75,1.5,
+                                         variable_name="Modell - Drivmedelpriser!G6")
+                          ,RealParameter("Electricity price adjustment",
+                                         .5,2
+                                         ,variable_name="Modell - Drivmedelpriser!G4")
                           ]
     #Specification of levers
     model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
