@@ -27,15 +27,17 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rcParams['figure.dpi'] = 300
 
 sns.set(rc={"figure.dpi":300})
+
+sns.set_palette("bright")
 #%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
 
-n_policies=2
-n_scenarios=100
+n_policies=8
+n_scenarios=500
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2021-12-17'
+    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2021-12-23'
     results = load_results(t1+'.tar.gz')
     experiments=results[0]
     outcomes=results[1]
@@ -80,9 +82,9 @@ plt.show()
 sns.set_theme(style="whitegrid")
 g = sns.PairGrid(df_policies.sort_values("policy", ascending=False),
                  x_vars=df_policies.columns[1:], y_vars=["policy"],
-                 palette="colorblind", height=10, aspect=.5)
+                 palette="colorblind", height=10, aspect=1)
 
-g.map(sns.stripplot, size=10, orient="h", jitter=False, linewidth=1,
+g.map(sns.stripplot, size=5, orient="h", jitter=False, linewidth=1,
       edgecolor="w")
 for ax, title in zip(g.axes.flat, df_policies.columns[1:]):
     # Set a different title for each axes
@@ -112,21 +114,29 @@ if parcoords == 1:
     plt.legend(df_policies["policy"])
 
 
+
+
+
 #%%
-
-
-### SCENARIO EXPLORATION###
-sns.set_palette("deep")
-
-
 ### Pairwise scatter plots on outcomes
 fig,axes = pairs_scatter(experiments,outcomes, legend=True, group_by="policy")
 fig.set_size_inches(15,15)
 plt.show()
 
-# fig,axes =  sns.pairplot(data=df_outcomes, hue="policy")
-# fig.set_size_inches(15,15)
-
+#%% mega plot
+df_full2=df_full.drop(columns=["ICE CO2 reduction ambition level",
+                               "Bus energy consumption","model","scenario",
+                               "Share FAME diesel","Share ethanol gasoline",
+                               "Transport efficient society trucks",
+                               "Transport efficient society light vehicles",
+                               "Additional energy efficiency trucks",
+                               "Additional energy efficiency light vehicles",
+                               "km-tax light vehicles",
+                               "km-tax trucks"]
+                      )
+fig,axes =  sns.pairplot(data=df_full2, hue="policy")
+fig.set_size_inches(15,15)
+#%%
 
 ###FEATURE SCORING ON OUTCOMES
 
@@ -135,7 +145,7 @@ plt.figure()
 fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
 
 ### scenario discovery
-
+#%%
 #Define criterion for unwanted outcome
 fail_criterion_CO2=-0.7
 fail_criterion_bio=20
@@ -159,11 +169,33 @@ share_fail=n_fail/len(y)
 share_success=1-share_fail
 #%%
 import statistics
+sns.set_palette("bright")
+plt.figure()
+sns.scatterplot(x='CO2 TTW change total', y='Energy bio total', 
+              data=df_full, hue="policy", alpha=0.5)
+plt.ylabel("Energy bio total [TWh")
+plt.xlabel("Change in CO2 cmpr.2010, TTW")
+plt.show()
+
+sns.scatterplot(x='CO2 TTW change total', y='Energy bio total', 
+              data=df_full, hue="Car el share", alpha=0.5)
+plt.show()
+
+sns.scatterplot(x='CO2 TTW change total', y='Car el share', 
+              data=df_full, hue="policy", alpha=0.5)
+plt.show()
+
+sns.scatterplot(x='Car el share', y='Energy bio total', 
+              data=df_full, hue="policy", alpha=0.5)
+plt.show()
 #Plot hist/KDE on criterions
 sns.displot(x='CO2 TTW change total', data=df_full, hue="policy",kde=True)
 plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
             facecolor='red', alpha=0.2,edgecolor='None')
-plt.axvline(statistics.mean(outcomes['CO2 TTW change total']),color="red")
+plt.axvline(statistics.mean(outcomes['CO2 TTW change total']),color="black", 
+            ls="--")
+plt.legend (["Strategy 1","Strategy 2","Strategy 3","Strategy 4","Strategy 5",
+            "Strategy 6","Strategy 7"])
 
 sns.displot(x='Energy bio total', data=df_full, hue="policy", kde=True)
 plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
@@ -175,7 +207,7 @@ g=sns.displot(x='CO2 TTW change total', y='Energy bio total',
 ylim=g.ax.get_ylim()
 xlim=g.ax.get_xlim()
 plt.axvspan(fail_criterion_CO2, xlim[1],facecolor='red', alpha=0.2, edgecolor='none')
-plt.axvspan(xlim[0],fail_criterion_CO2,fail_criterion_bio/ylim[1],facecolor='red', alpha=0.2,edgecolor='none')
+plt.axvspan(xlim[0],fail_criterion_CO2,fail_criterion_bio/ylim[1],facecolor='red', alpha=.2,edgecolor='none')
 
 #%%
 
@@ -185,7 +217,7 @@ fs_discovery, alg = feature_scoring.get_ex_feature_scores(x, y, mode=feature_sco
 fs_discovery.sort_values(ascending=False, by=1)
 plt.figure()
 fig=sns.heatmap(fs_discovery, cmap='viridis', annot=True)
-
+#%%
 #Scatter pair plot for all uncertainties and whether or not target is met
 x_copy2 = experiments.copy()
 x_copy2= x_copy2.drop('scenario', axis=1)
@@ -195,12 +227,12 @@ g.map_diag(sns.kdeplot, shade=True)
 g.map_offdiag(plt.scatter,edgecolor="white",alpha=0.5)
 g.add_legend()
 g.fig.set_size_inches(20,20)
-
+#%%
 #Dimensional stacking
 from ema_workbench.analysis import dimensional_stacking
 dimensional_stacking.create_pivot_plot(x,y, 2, nbins=5)
 plt.show()
-
+#%%
 #Regional sensitivty analysis, # model is the same across experiments
 from ema_workbench.analysis import regional_sa
 sns.set_style('white')
@@ -213,13 +245,13 @@ plt.show()
 
 #%%%#Perform PRIM analysis
 
-#Set ut PRIM
+#Set up PRIM
 from ema_workbench.analysis import prim
 prim_alg = prim.Prim(x, y, threshold=0.5)
-
+#%%
 #Find 1st box
 box1 = prim_alg.find_box()
-
+#%%
 #Visualizations of Box1
 box1.show_tradeoff()
 
@@ -232,16 +264,16 @@ for i in range(0,len(box1.peeling_trajectory.T.columns)):
 plt.show()
 
 #Choose point for inspection
-i1=round((len(box1.peeling_trajectory.T.columns)-1)/2)
+i1=round((len(box1.peeling_trajectory.T.columns)-1))
 #or choose box manually
-#i1=27
+i1=4
 box1.inspect(i1)
 box1.inspect(i1, style='graph')
 plt.show()
 box1.show_ppt()
 ax=box1.show_pairs_scatter(i1)
 plt.show()
-
+#%%
 #Find 2nd box
 box2 = prim_alg.find_box()
 #Visualizations of Box2

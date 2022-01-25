@@ -39,23 +39,56 @@ if __name__ == "__main__":
                           ,RealParameter("Car demand change",
                                          -0.3,0.3
                                          ,variable_name="F38")
+                          ,RealParameter("Diesel price",
+                                         10,18,
+                                         variable_name="F28")
+                          ,RealParameter("Electricity price",
+                                         .5,4
+                                         ,variable_name="F38")
                           ]
     #Specification of levers
     model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
                                          ["1 Beslutad politik","2 Mer ambitios politik"]
                                          ,variable_name="F17"),
+                    CategoricalParameter("Bus energy consumption",
+                                         ["Beslutad politik","Level 1","Level 2"]
+                                         ,variable_name="F23"),
                     RealParameter("Share HVO diesel",
                                   0, 0.80,
                                   variable_name="F12"),
+                    RealParameter("Share FAME diesel",
+                                  0, 0.07,
+                                  variable_name="F11"),
                     RealParameter("Share HVO gasoline", 
                                   0, 0.7,
                                   variable_name="F10"),
+                    RealParameter("Share ethanol gasoline", 
+                                  0, 0.1,
+                                  variable_name="F11"),
                     RealParameter("km-tax light vehicles",
                                   0,3
                                   ,variable_name="F15"),
                     RealParameter("km-tax trucks",
                                   0,3
                                   ,variable_name="F16"),
+                    RealParameter("Change in fuel tax gasoline",
+                                  0,3
+                                  ,variable_name="F13"),
+                    RealParameter("Change in fuel tax diesel",
+                                  0,3
+                                  ,variable_name="F14"),
+                    RealParameter("Additional energy efficiency light vehicles",
+                                  0,.2
+                                  ,variable_name="F19"),
+                    RealParameter("Additional energy efficiency trucks",
+                                  0,.2
+                                  ,variable_name="F20"),
+                    RealParameter("Transport efficient society light vehicles",
+                                  0,.2
+                                  ,variable_name="F21"),
+                    RealParameter("Transport efficient society trucks",
+                                  0,.2
+                                  ,variable_name="F22"),
 
                     ]
     # specification of the outcomes
@@ -74,7 +107,15 @@ if __name__ == "__main__":
                       ScalarOutcome("Energy fossile total", 
                                     variable_name="D72"),
                       ScalarOutcome("Energy el total",
-                                    variable_name="D73")
+                                    variable_name="D73"),
+                      ScalarOutcome("VKT light vehicles",
+                                    variable_name="Resultat!F30"),
+                      ScalarOutcome("VKT total",
+                                    variable_name="Resultat!F34"),
+                      ScalarOutcome("Driving cost light vehicles",
+                                    variable_name="Resultat!F23"),
+                      ScalarOutcome("Driving cost trucks",
+                                    variable_name="Resultat!F23")
                       #ScalarOutcome("Total cost trucks",
                                     #variable_name="D74"),
                       #ScalarOutcome("Total cost cars",
@@ -83,34 +124,144 @@ if __name__ == "__main__":
     
     #%% Specify policies
     from ema_workbench.em_framework import samplers
-    n_policies=2
+    n_policies=8
     policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())   
     #%% manual specification of policies
-    # overide the pre-determined policies
+    # overide the pre-sampled policies
     manual_policies=1
     if manual_policies==1:
-        policy1=(1,    #ICE reduction ambition level [0=low, 1=high]
-                 0.49,  #Share HVO diesel
-                 0.49,  #Share HVO gasoline 
-                 0,  #km-tax light vehicles
-                 0) #km-tax trucks
-        policy2=(1,
-                 0.2,
-                 0.2,
-                 0.2,
-                 0.2)
-        all_policies=[policy1,policy2]
+        policy1=(0,     #Additional energy efficiency light vehicles [%]
+                 0,  #Additional energy efficiency trucks [%]
+                 1,  #Bus energy consumption [0,1,2]
+                 .02,     #Change in fuel tax diesel [%/y]
+                 .02,      #Change in fuel tax gasoline [%/y]  
+                 1,     #ICE CO2 reduction ambition level [0,1]
+                 .07,     #Share FAME diesel [%]
+                 .490,     #Share HVO diesel [%]
+                 .490,     #Share HVO gasoline [%]
+                 0.1,     #Share ethanol gasoline [%]
+                 0,     #Transport efficient society light vehicles [% reduction]
+                 0,     #Transport efficient society trucks [% reduction]
+                 0,     #km-tax light vehicles [SEK/km]
+                 0)     #km-tax trucks [SEK/km]
+        policy2=(0,     #Additional energy efficiency light vehicles [%]
+                 0,  #Additional energy efficiency trucks [%]
+                 2,  #Bus energy consumption [0,1,2]
+                 .15,     #Change in fuel tax diesel [%/y]
+                 .15,      #Change in fuel tax gasoline [%/y]  
+                 1,     #ICE CO2 reduction ambition level [0,1]
+                 .07,     #Share FAME diesel [%]
+                 .390,     #Share HVO diesel [%]
+                 .390,     #Share HVO gasoline [%]
+                 0.1,     #Share ethanol gasoline [%]
+                 0,     #Transport efficient society light vehicles [% reduction]
+                 0,     #Transport efficient society trucks [% reduction]
+                 0,     #km-tax light vehicles [SEK/km]
+                 0)     #km-tax trucks [SEK/km]
+        policy3=(0,     #Additional energy efficiency light vehicles [%]
+                 0,  #Additional energy efficiency trucks [%]
+                 2,  #Bus energy consumption [0,1,2]
+                 .08,     #Change in fuel tax diesel [%/y]
+                 .08,      #Change in fuel tax gasoline [%/y]  
+                 1,     #ICE CO2 reduction ambition level [0,1]
+                 .07,     #Share FAME diesel [%]
+                 .390,     #Share HVO diesel [%]
+                 .390,     #Share HVO gasoline [%]
+                 0.1,     #Share ethanol gasoline [%]
+                 0,     #Transport efficient society light vehicles [% reduction]
+                 0,     #Transport efficient society trucks [% reduction]
+                 1,     #km-tax light vehicles [SEK/km]
+                 2)     #km-tax trucks [SEK/km]
+        policy4=(0,     #Additional energy efficiency light vehicles [%]
+                 0,  #Additional energy efficiency trucks [%]
+                 2,  #Bus energy consumption [0,1,2]
+                 .16,     #Change in fuel tax diesel [%/y]
+                 .16,      #Change in fuel tax gasoline [%/y]  
+                 1,     #ICE CO2 reduction ambition level [0,1]
+                 .07,     #Share FAME diesel [%]
+                 .275,     #Share HVO diesel [%]
+                 .275,     #Share HVO gasoline [%]
+                 0.1,     #Share ethanol gasoline [%]
+                 0,     #Transport efficient society light vehicles [% reduction]
+                 0,     #Transport efficient society trucks [% reduction]
+                 1,     #km-tax light vehicles [SEK/km]
+                 2)     #km-tax trucks [SEK/km]
+        policy5=(0,     #Additional energy efficiency light vehicles [%]
+                 0,  #Additional energy efficiency trucks [%]
+                 2,  #Bus energy consumption [0,1,2]
+                 .204,     #Change in fuel tax diesel [%/y]
+                 .204,      #Change in fuel tax gasoline [%/y]  
+                 1,     #ICE CO2 reduction ambition level [0,1]
+                 .07,     #Share FAME diesel [%]
+                 .275,     #Share HVO diesel [%]
+                 .275,     #Share HVO gasoline [%]
+                 0.1,     #Share ethanol gasoline [%]
+                 0,     #Transport efficient society light vehicles [% reduction]
+                 0,     #Transport efficient society trucks [% reduction]
+                 0,     #km-tax light vehicles [SEK/km]
+                 0)     #km-tax trucks [SEK/km]
+        policy6=(-0.05,     #Additional energy efficiency light vehicles [%]
+                 -0.05,  #Additional energy efficiency trucks [%]
+                 2,  #Bus energy consumption [0,1,2]
+                 .04,     #Change in fuel tax diesel [%/y]
+                 .04,      #Change in fuel tax gasoline [%/y]  
+                 1,     #ICE CO2 reduction ambition level [0,1]
+                 .07,     #Share FAME diesel [%]
+                 .386,     #Share HVO diesel [%]
+                 .386,     #Share HVO gasoline [%]
+                 0.1,     #Share ethanol gasoline [%]
+                 -.10,     #Transport efficient society light vehicles [%]
+                 -.050,     #Transport efficient society trucks [%]
+                 .50,     #km-tax light vehicles [SEK/km]
+                 1)     #km-tax trucks [SEK/km]
+        policy7=(-.05,     #Additional energy efficiency light vehicles [%]
+                 -.05,  #Additional energy efficiency trucks [%]
+                 2,  #Bus energy consumption [0,1,2]
+                 .15,     #Change in fuel tax diesel [%/y]
+                 .15,      #Change in fuel tax gasoline [%/y]  
+                 1,     #ICE CO2 reduction ambition level [0,1]
+                 .07,     #Share FAME diesel [%]
+                 .270,     #Share HVO diesel [%]
+                 .270,     #Share HVO gasoline [%]
+                 0.1,     #Share ethanol gasoline [%]
+                 -.10,     #Transport efficient society light vehicles [% reduction]
+                 -.050,     #Transport efficient society trucks [% reduction]
+                 .50,     #km-tax light vehicles [SEK/km]
+                 1)     #km-tax trucks [SEK/km]
+        policy8=(-.05,     #Additional energy efficiency light vehicles [%]
+                 -.05,  #Additional energy efficiency trucks [%]
+                 2,  #Bus energy consumption [0,1,2]
+                 .125,     #Change in fuel tax diesel [%/y]
+                 .125,      #Change in fuel tax gasoline [%/y]  
+                 1,     #ICE CO2 reduction ambition level [0,1]
+                 .07,     #Share FAME diesel [%]
+                 .2550,     #Share HVO diesel [%]
+                 .2550,     #Share HVO gasoline [%]
+                 0.1,     #Share ethanol gasoline [%]
+                 -.18,     #Transport efficient society light vehicles [% reduction]
+                 -.120,     #Transport efficient society trucks [% reduction]
+                 .50,     #km-tax light vehicles [SEK/km]
+                 1)     #km-tax trucks [SEK/km]
+
+        all_policies=[policy1,policy2,policy3,policy4,policy5,policy6,policy7,policy8]
         policies.designs=all_policies
-        policy_names=["B - bio fuels","Strategy 2"]
+        policy_names=["B  Bio fuels",
+                      "C1 High fuel tax, biofuels <20TWh",
+                      "C2 Fuel and km-tax, biofuels <20TWh",
+                      "C3 High fuel and km-tax, biofuels <13TWh",
+                      "C4 High fuel tax, biofuels <13TWh",
+                      "D1 Transport efficiency, fuel and km-tax, biofuels <20TWh",
+                      "D2 High transport efficiency, high fuel and km-tax, biofuels <13TWh",
+                      "D3 High transport efficiency, high fuel and km-tax, biofuels <13TWh"]
     #%%
     #select number of scenarios (per policy)
-    nr_scenarios=100
+    nr_scenarios=500
     
     #Run model - for open exploration
     
     #Simulation settings
     run_with_policies=1
-    use_multi=0
+    use_multi=1
     n_p=4
     
     #Run
@@ -148,7 +299,6 @@ if __name__ == "__main__":
     if manual_policies ==1:
         j=0
         for i in experiments["policy"].unique():
-            print(i)
             experiments.loc[experiments['policy'] == i, 'policy'] = policy_names[j]
             j=j+1
     #%%
