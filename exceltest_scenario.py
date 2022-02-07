@@ -97,6 +97,8 @@ if __name__ == "__main__":
     # specification of the outcomes
     model.outcomes = [ScalarOutcome("CO2 TTW change trucks",
                                     variable_name="D66"),
+                      ScalarOutcome("CO2 TTW change light vehicles",
+                                                      variable_name="D74"),
                       ScalarOutcome("CO2 TTW change total", 
                                     variable_name="D67"),
                       ScalarOutcome("VKT trucks", 
@@ -118,7 +120,7 @@ if __name__ == "__main__":
                       ScalarOutcome("Driving cost light vehicles",
                                     variable_name="Resultat!F23"),
                       ScalarOutcome("Driving cost trucks",
-                                    variable_name="Resultat!F23")
+                                    variable_name="Resultat!F26")
                       #ScalarOutcome("Total cost trucks",
                                     #variable_name="D74"),
                       #ScalarOutcome("Total cost cars",

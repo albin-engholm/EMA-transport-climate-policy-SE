@@ -37,7 +37,7 @@ n_scenarios=500
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2022-01-25'
+    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2022-02-01'
     results = load_results(t1+'.tar.gz')
     experiments=results[0]
     outcomes=results[1]
@@ -82,7 +82,7 @@ plt.show()
 sns.set_theme(style="whitegrid")
 g = sns.PairGrid(df_policies.sort_values("policy", ascending=False),
                  x_vars=df_policies.columns[1:], y_vars=["policy"],
-                 palette="colorblind", height=10, aspect=1)
+                 palette="colorblind", height=10, aspect=.1)
 
 g.map(sns.stripplot, size=5, orient="h", jitter=False, linewidth=1,
       edgecolor="w")
@@ -112,10 +112,6 @@ if parcoords == 1:
     paraxes = parcoords.ParallelAxes(limits)
     paraxes.plot(df_policies_parcoords)
     plt.legend(df_policies["policy"])
-
-
-
-
 
 #%%
 ### Pairwise scatter plots on outcomes
@@ -162,7 +158,6 @@ for j in range(len(y1)):
 #choose criterion to use y1=first criterion only, y2=second criterion only,y3=either first or second criterion=fail
 y=np.array(y3,dtype=bool)
 
-
 #Basic statistics 
 n_fail = np.count_nonzero(y)
 share_fail=n_fail/len(y)
@@ -188,28 +183,40 @@ plt.show()
 sns.scatterplot(x='Car el share', y='Energy bio total', 
               data=df_full, hue="policy", alpha=0.5)
 plt.show()
+
+sns.scatterplot(x='CO2 TTW change light vehicles', y='Driving cost light vehicles', 
+              data=df_full, hue="policy", alpha=0.5)
+plt.show()
+
+sns.scatterplot(x='CO2 TTW change trucks', y='Driving cost trucks', 
+              data=df_full, hue="policy", alpha=0.5)
+plt.show()
+
+#%%
 #Plot hist/KDE on criterions
 sns.displot(x='CO2 TTW change total', data=df_full, hue="policy",kde=True)
-#plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
-#            facecolor='red', alpha=0.2,edgecolor='None')
+plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
+            facecolor='red', alpha=0.05,edgecolor='None')
 #plt.axvline(statistics.mean(outcomes['CO2 TTW change total']),color="black", 
 #            ls="--")
-plt.axvline(fail_criterion_CO2,color="black", 
+plt.axvline(fail_criterion_CO2,color="red", 
             ls="--")
-plt.legend (["B","C1","C2","C3","C4",
-            "D1","D2","D3"])
+#plt.legend (["B","C1","C2","C3","C4",
+         #   "D1","D2","D3"])
 
 sns.displot(x='Energy bio total', data=df_full, hue="policy", kde=True)
 plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
-            facecolor='red', alpha=0.2,edgecolor='None')
-plt.axvline(statistics.mean(outcomes['Energy bio total']),color="red")
-
+            facecolor='red', alpha=0.05,edgecolor='None')
+plt.axvline(statistics.mean(outcomes['Energy bio total']),color="red",ls="--")
+#%%
 g=sns.displot(x='CO2 TTW change total', y='Energy bio total', 
-              data=df_full, hue="policy", alpha=0.5)
+              data=df_full, hue="policy", alpha=0.8)
 ylim=g.ax.get_ylim()
 xlim=g.ax.get_xlim()
-plt.axvspan(fail_criterion_CO2, xlim[1],facecolor='red', alpha=0.2, edgecolor='none')
-plt.axvspan(xlim[0],fail_criterion_CO2,fail_criterion_bio/ylim[1],facecolor='red', alpha=.2,edgecolor='none')
+plt.axvspan(fail_criterion_CO2, xlim[1],facecolor='red', alpha=0.1, 
+            edgecolor='none')
+plt.axvspan(xlim[0],fail_criterion_CO2,fail_criterion_bio/ylim[1],
+            facecolor='red', alpha=.1,edgecolor='none')
 
 #%%
 
@@ -268,7 +275,7 @@ plt.show()
 #Choose point for inspection
 i1=round((len(box1.peeling_trajectory.T.columns)-1))
 #or choose box manually
-i1=4
+i1=17
 box1.inspect(i1)
 box1.inspect(i1, style='graph')
 plt.show()
