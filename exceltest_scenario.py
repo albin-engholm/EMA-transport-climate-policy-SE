@@ -31,22 +31,22 @@ if __name__ == "__main__":
                                          .05,0.7
                                          ,variable_name="D79")
                           ,RealParameter("Truck demand change",
-                                         -0.3,0.30,
+                                         -0.2,0.20,
                                          variable_name="F61")
                           ,RealParameter("Car el share",
-                                         0.1,0.7,
+                                         0.1,0.8,
                                          variable_name="F28")
                           ,RealParameter("Car demand change",
-                                         -0.3,0.3
+                                         -0.2,0.2
                                          ,variable_name="F38")
                           ,RealParameter("Fossile price adjustment",
-                                         0.75,1.5,
+                                         0.8,2,
                                          variable_name="Modell - Drivmedelpriser!G5")
                           ,RealParameter("Biofuel price adjustment",
-                                         0.75,1.5,
+                                         0.8,3,
                                          variable_name="Modell - Drivmedelpriser!G6")
                           ,RealParameter("Electricity price adjustment",
-                                         .5,2
+                                         .5,4
                                          ,variable_name="Modell - Drivmedelpriser!G4")
                           ]
     #Specification of levers
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     print("Runtime [h]= " +str(round((toc-tic)/3600,1)))
     print("Runtime per experiment [s]= " +str((toc-tic)/len(experiments)))
     #%% rename policies if manual policies are used 
-    if manual_policies ==1:
+    if manual_policies == 1:
         j=0
         for i in experiments["policy"].unique():
             experiments.loc[experiments['policy'] == i, 'policy'] = policy_names[j]

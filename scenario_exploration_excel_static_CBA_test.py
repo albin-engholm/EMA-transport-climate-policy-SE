@@ -37,7 +37,7 @@ n_scenarios=500
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2022-02-01'
+    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2022-03-15'
     results = load_results(t1+'.tar.gz')
     experiments=results[0]
     outcomes=results[1]
@@ -157,11 +157,20 @@ for j in range(len(y1)):
         y3[j]=False
 #choose criterion to use y1=first criterion only, y2=second criterion only,y3=either first or second criterion=fail
 y=np.array(y3,dtype=bool)
-
+x["Target not met"]=y
 #Basic statistics 
 n_fail = np.count_nonzero(y)
 share_fail=n_fail/len(y)
 share_success=1-share_fail
+#Basic statistics per policy
+df_policies=pd.DataFrame()
+for i in x["policy"].unique():
+    temp=x[x["policy"].str.contains(i)]
+    print(i)
+    df_policies["policy"].append(i)
+    df_policies["n fail"]=np.count_nonzero(temp["Target not met"])
+    df_policies["n success"]=len(temp)-np.count_nonzero(temp["Target met"])
+
 #%%
 import statistics
 sns.set_palette("bright")
@@ -176,7 +185,7 @@ sns.scatterplot(x='CO2 TTW change total', y='Energy bio total',
               data=df_full, hue="Car el share", alpha=0.5)
 plt.show()
 
-sns.scatterplot(x='CO2 TTW change total', y='Car el share', 
+sns.scatterplot(x='Car el share', y= 'CO2 TTW change total', 
               data=df_full, hue="policy", alpha=0.5)
 plt.show()
 
@@ -299,8 +308,6 @@ box2.show_pairs_scatter(i2)
 plt.show()
 
 coverage_2boxes=box1.coverage+box2.coverage
-
-
 
 #%%
 # #%%
