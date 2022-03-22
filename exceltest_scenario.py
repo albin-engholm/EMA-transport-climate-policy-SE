@@ -5,7 +5,6 @@ Created on Fri Apr 16 12:45:55 2021
 @author: aengholm
 This is a script for setting up and running an EMA analysis using a static 
 excel model with parametric uncertainties(designed for the TRV scenario model)
-Current version has not implement policies for the specific model
 Results are saved and can be loaded for analysis in separate script - 
 e.g. scenario_exploration_excel_static.py'
 """ 
@@ -48,6 +47,12 @@ if __name__ == "__main__":
                           ,RealParameter("Electricity price adjustment",
                                          .5,4
                                          ,variable_name="Modell - Drivmedelpriser!G4")
+                          ,RealParameter("Truck demand elasticity",
+                                         -.5,-.1
+                                         ,variable_name="D78")
+                          ,RealParameter("Car demand elasticity",
+                                         -.5,-.1
+                                         ,variable_name="D80")
                           ]
     #Specification of levers
     model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
@@ -75,10 +80,10 @@ if __name__ == "__main__":
                                   0,3
                                   ,variable_name="F16"),
                     RealParameter("Change in fuel tax gasoline",
-                                  0,3
+                                  0,.5
                                   ,variable_name="F13"),
                     RealParameter("Change in fuel tax diesel",
-                                  0,3
+                                  0,.5
                                   ,variable_name="F14"),
                     RealParameter("Additional energy efficiency light vehicles",
                                   0,.2
@@ -87,10 +92,10 @@ if __name__ == "__main__":
                                   0,.2
                                   ,variable_name="F20"),
                     RealParameter("Transport efficient society light vehicles",
-                                  0,.2
+                                  -.3,0
                                   ,variable_name="F21"),
                     RealParameter("Transport efficient society trucks",
-                                  0,.2
+                                  -.3,0
                                   ,variable_name="F22"),
 
                     ]
@@ -260,7 +265,7 @@ if __name__ == "__main__":
                       "D3 High transport efficiency, high fuel and km-tax, biofuels <13TWh"]
     #%%
     #select number of scenarios (per policy)
-    nr_scenarios=500
+    nr_scenarios=250
     
     #Run model - for open exploration
     

@@ -33,11 +33,11 @@ sns.set_palette("bright")
 #Should previously saved result data be loaded? If not, data from workspace is used
 
 n_policies=8
-n_scenarios=500
+n_scenarios=250
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2022-03-15'
+    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2022-03-22'
     results = load_results(t1+'.tar.gz')
     experiments=results[0]
     outcomes=results[1]
@@ -65,7 +65,6 @@ for i in model.levers.keys():
 df_policies=df_policies.drop_duplicates()
 df_policies.reset_index(drop=True, inplace=True)
 
-
 #%%Visualize policies
 
 #Plot table of policies
@@ -88,11 +87,12 @@ g.map(sns.stripplot, size=5, orient="h", jitter=False, linewidth=1,
       edgecolor="w")
 for ax, title in zip(g.axes.flat, df_policies.columns[1:]):
     # Set a different title for each axes
-    ax.set(title=title)
+    #ax.set(title=title)
     # Make the grid horizontal instead of vertical
     ax.xaxis.grid(False)
     ax.yaxis.grid(True)
 sns.despine(left=True, bottom=True)
+
 
 #%%
 #Parcoords plot, requires manual work 
@@ -132,44 +132,89 @@ plt.show()
 #                       )
 # fig,axes =  sns.pairplot(data=df_full2, hue="policy")
 # fig.set_size_inches(15,15)
-#%%
-
-###FEATURE SCORING ON OUTCOMES
+#%%FEATURE SCORING ON OUTCOMES
 
 fs = feature_scoring.get_feature_scores_all(experiments, outcomes)
 plt.figure()
 fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
 
 ### scenario discovery
-#%%
-#Define criterion for unwanted outcome
+#%% Calculate whether targets are met
+#Define criterion for unwanted outcome and store in xdf
 fail_criterion_CO2=-0.7
-fail_criterion_bio=20
+fail_criterion_bio=15
 #Prepare data, x and y arrays
 x = experiments
 y1=outcomes['CO2 TTW change total']>fail_criterion_CO2
 y2=outcomes['Energy bio total']>fail_criterion_bio
+#Check if either of fail
 y3=[0]*len(x)
 for j in range(len(y1)):
     if y1[j]==True or y2[j]==True:
         y3[j]=True
     else: 
         y3[j]=False
-#choose criterion to use y1=first criterion only, y2=second criterion only,y3=either first or second criterion=fail
+#Check if both fail
+y4=[0]*len(x)
+for j in range(len(y1)):
+    if y1[j]==True and y2[j]==True:
+        y4[j]=True
+    else: 
+        y4[j]=False
+#choose criterion to use y1=first criterion only, y2=second criterion only,y3=either first or second criterion=fail, y4=both criterion fail
 y=np.array(y3,dtype=bool)
-x["Target not met"]=y
+y4=np.array(y4,dtype=bool)
+df_full["CO2 target not met"]=y1
+df_full["Bio target not met"]=y2
+df_full["At least one target not met"]=y
+df_full["No target met"]=y4
+#%% Calculate basic statistics
 #Basic statistics 
 n_fail = np.count_nonzero(y)
 share_fail=n_fail/len(y)
 share_success=1-share_fail
+
 #Basic statistics per policy
-df_policies=pd.DataFrame()
-for i in x["policy"].unique():
-    temp=x[x["policy"].str.contains(i)]
-    print(i)
-    df_policies["policy"].append(i)
-    df_policies["n fail"]=np.count_nonzero(temp["Target not met"])
-    df_policies["n success"]=len(temp)-np.count_nonzero(temp["Target met"])
+df_policies_out=pd.DataFrame()
+df_policies_out["policy"]=x["policy"].unique()
+
+n_failCO2_list=[]
+failCO2_share_list=[]
+n_failBio_list=[]
+failBio_share_list=[]
+n_fail_list=[]
+fail_share_list=[]
+n_failNo_list=[]
+fail_shareNo_list=[]
+
+for i in df_policies_out["policy"]:
+    temp=df_full[df_full["policy"].str.contains(i)]
+    n_failCO2_list.append(np.count_nonzero(temp["CO2 target not met"]))
+    failCO2_share_list.append(np.count_nonzero(temp["CO2 target not met"])/len(temp))
+    n_failBio_list.append(np.count_nonzero(temp["Bio target not met"]))
+    failBio_share_list.append(np.count_nonzero(temp["Bio target not met"])/len(temp))
+    n_fail_list.append(np.count_nonzero(temp["At least one target not met"]))
+    fail_share_list.append(np.count_nonzero(temp["At least one target not met"])/len(temp))
+    n_failNo_list.append(np.count_nonzero(temp["No target met"]))
+    fail_shareNo_list.append(np.count_nonzero(temp["No target met"])/len(temp))
+    
+    
+df_policies_out["CO2 target not met"]=n_failCO2_list
+df_policies_out["CO2 target not met share"]=failCO2_share_list
+df_policies_out["Bio target not met"]=n_failBio_list
+df_policies_out["Bio target not met share"]=failBio_share_list
+df_policies_out["At least one target not met"]=n_fail_list
+df_policies_out["At least one target not met share"]=fail_share_list
+df_policies_out["No target met"]=n_failNo_list
+df_policies_out["No target met share"]=fail_shareNo_list
+
+df_policies_out.plot(x="policy",y=["CO2 target not met share",
+                                "Bio target not met share",
+                                "At least one target not met share","No target met share"],
+                  kind="bar",title="Share of experiments where policy fails",
+                  ylim=[0,1],
+                  )
+plt.xticks(rotation=90)
 
 #%%
 import statistics
@@ -201,22 +246,70 @@ sns.scatterplot(x='CO2 TTW change trucks', y='Driving cost trucks',
               data=df_full, hue="policy", alpha=0.5)
 plt.show()
 
+sns.scatterplot(x='CO2 TTW change trucks', y='VKT trucks', 
+              data=df_full, hue="policy", alpha=0.5)
+plt.show()
+
 #%%
-#Plot hist/KDE on criterions
+sns.violinplot(x='policy', y='VKT trucks', 
+              data=df_full, inner="quart",hue="No target met", split=True )
+plt.xticks(rotation=90)
+plt.show()
+
+sns.violinplot(x='policy', y='VKT total', 
+              data=df_full, inner="quart",hue="No target met", split=True )
+plt.xticks(rotation=90)
+plt.show()
+#%% Distribution and box plot of policies
+#Plot hist/KDE on CO2 criterion
 sns.displot(x='CO2 TTW change total', data=df_full, hue="policy",kde=True)
 plt.axvspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
             facecolor='red', alpha=0.05,edgecolor='None')
-#plt.axvline(statistics.mean(outcomes['CO2 TTW change total']),color="black", 
-#            ls="--")
 plt.axvline(fail_criterion_CO2,color="red", 
             ls="--")
-#plt.legend (["B","C1","C2","C3","C4",
-         #   "D1","D2","D3"])
-
+#Plot hist/KDE on bio criterion
 sns.displot(x='Energy bio total', data=df_full, hue="policy", kde=True)
 plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
             facecolor='red', alpha=0.05,edgecolor='None')
 plt.axvline(statistics.mean(outcomes['Energy bio total']),color="red",ls="--")
+
+#Plot box on CO2 criterion
+plt.figure()
+sns.boxplot(x='policy', y='CO2 TTW change total', data=df_full)
+plt.axhspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
+            facecolor='red', alpha=0.05,edgecolor='None')
+plt.axhline(fail_criterion_CO2,color="red", 
+            ls="--")
+plt.xticks(rotation=90)
+
+#Plot box on bio criterion
+plt.figure()
+sns.boxplot(x='policy', y='Energy bio total', data=df_full)
+plt.axhspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
+            facecolor='red', alpha=0.05,edgecolor='None')
+plt.axhline(fail_criterion_bio,color="red", 
+            ls="--")
+plt.xticks(rotation=90)
+#%% Violin plots
+plt.figure()
+sns.violinplot(x='policy', y='CO2 TTW change total', data=df_full,
+               inner="quart")
+plt.axhspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
+            facecolor='red', alpha=0.05,edgecolor='None')
+plt.axhline(fail_criterion_CO2,color="red", 
+            ls="-")
+plt.xticks(rotation=90)
+
+plt.figure()
+sns.violinplot(x='policy', y='Energy bio total', data=df_full,
+               inner="quart")
+plt.axhspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
+            facecolor='red', alpha=0.05,edgecolor='None')
+plt.axhline(fail_criterion_bio,color="red", 
+            ls="-")
+plt.xticks(rotation=90)
+
+
 #%%
 g=sns.displot(x='CO2 TTW change total', y='Energy bio total', 
               data=df_full, hue="policy", alpha=0.8)
@@ -228,8 +321,6 @@ plt.axvspan(xlim[0],fail_criterion_CO2,fail_criterion_bio/ylim[1],
             facecolor='red', alpha=.1,edgecolor='none')
 
 #%%
-
-
 # Feature scoring on scenario disocvery data (what ucnertainties drive fail/success of outcomes)
 fs_discovery, alg = feature_scoring.get_ex_feature_scores(x, y, mode=feature_scoring.RuleInductionType.CLASSIFICATION)
 fs_discovery.sort_values(ascending=False, by=1)
@@ -284,7 +375,7 @@ plt.show()
 #Choose point for inspection
 i1=round((len(box1.peeling_trajectory.T.columns)-1))
 #or choose box manually
-i1=17
+#i1=17
 box1.inspect(i1)
 box1.inspect(i1, style='graph')
 plt.show()
@@ -308,55 +399,3 @@ box2.show_pairs_scatter(i2)
 plt.show()
 
 coverage_2boxes=box1.coverage+box2.coverage
-
-#%%
-# #%%
-# # ------- PART 1: Define a function that do a plot for one line of the dataset!
- 
-# def make_spider( row, title, color):
-#     from math import pi
-#     # number of variable
-#     categories=list(df_policies)[1:]
-#     N = len(categories)
-
-#     # What will be the angle of each axis in the plot? (we divide the plot / number of variable)
-#     angles = [n / float(N) * 2 * pi for n in range(N)]
-#     angles += angles[:1]
-
-#     # Initialise the spider plot
-#     ax = plt.subplot(3,3,row+1, polar=True, )
-
-#     # If you want the first axis to be on top:
-#     ax.set_theta_offset(pi / 2)
-#     ax.set_theta_direction(-1)
-
-#     # Draw one axe per variable + add labels labels yet
-#     plt.xticks(angles[:-1], categories, color='grey', size=8)
-
-#     # Draw ylabels
-#     ax.set_rlabel_position(0)
-#     plt.yticks([10,20,30], ["10","20","30"], color="grey", size=7)
-#     plt.ylim(0,5)
-
-#     # Ind1
-#     values=df_policies.loc[row].drop('policy').values.flatten().tolist()
-#     values += values[:1]
-#     ax.plot(angles, values, color=color, linewidth=2, linestyle='solid')
-#     ax.fill(angles, values, color=color, alpha=0.4)
-
-#     # Add a title
-#     plt.title(title, size=11, color=color, y=1.1)
-
-    
-# # ------- PART 2: Apply the function to all individuals
-# # initialize the figure
-# my_dpi=96
-# plt.figure(figsize=(1000/my_dpi, 1000/my_dpi), dpi=my_dpi)
- 
-# # Create a color palette:
-# my_palette = plt.cm.get_cmap("Set2", len(df_policies.index))
- 
-# # Loop to plot
-# for row in range(0, len(df_policies.index)):
-#     print(row)
-#     make_spider( row=row, title='policy '+str(df_policies['policy'][row]), color=my_palette(row))
