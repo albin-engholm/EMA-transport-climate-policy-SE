@@ -31,13 +31,13 @@ sns.set(rc={"figure.dpi":300})
 sns.set_palette("bright")
 #%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
-
 n_policies=8
-n_scenarios=250
+n_scenarios=2000
+date='2022-04-12'
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
-    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_2022-03-22'
+    t1='./output_data/'+str(n_scenarios)+'_scenarios_'+str(n_policies)+'_policies_'+date
     results = load_results(t1+'.tar.gz')
     experiments=results[0]
     outcomes=results[1]
@@ -66,7 +66,6 @@ df_policies=df_policies.drop_duplicates()
 df_policies.reset_index(drop=True, inplace=True)
 
 #%%Visualize policies
-
 #Plot table of policies
 fig, ax = plt.subplots()
 # hide axes
@@ -92,10 +91,7 @@ for ax, title in zip(g.axes.flat, df_policies.columns[1:]):
     ax.xaxis.grid(False)
     ax.yaxis.grid(True)
 sns.despine(left=True, bottom=True)
-
-
-#%%
-#Parcoords plot, requires manual work 
+#%%Parcoords plot, requires manual work 
 parcoords=0
 if parcoords == 1:
     df_policies["ICE CO2 reduction ambition level"]=df_policies["ICE CO2 reduction ambition level"].cat.as_ordered()
@@ -116,7 +112,7 @@ if parcoords == 1:
 #%%
 ### Pairwise scatter plots on outcomes
 fig,axes = pairs_scatter(experiments,outcomes, legend=True, group_by="policy")
-fig.set_size_inches(15,15)
+fig.set_size_inches(25,25)
 plt.show()
 
 #%% mega plot
@@ -137,44 +133,63 @@ plt.show()
 fs = feature_scoring.get_feature_scores_all(experiments, outcomes)
 plt.figure()
 fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
+plt.title("Feature scoring, all parameters")
 
+fs = feature_scoring.get_feature_scores_all(experiments.drop(columns=model.levers._data.keys()), outcomes)
+plt.figure()
+fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
+plt.title("Feature scoring, no individual levers")
+
+fs = feature_scoring.get_feature_scores_all(experiments.drop(columns="policy"), outcomes)
+plt.figure()
+fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
+plt.title("Feature scoring, levers, no policy")
 ### scenario discovery
 #%% Calculate whether targets are met
 #Define criterion for unwanted outcome and store in xdf
-fail_criterion_CO2=-0.7
-fail_criterion_bio=15
+fail_criterion_CO2=-0.7 #expressed as relative change in annual GHG equivalents compared to 2010
+fail_criterion_bio=15 # tWh annual bioenergy use 
+fail_criterion_cost_light=2 #cost relative to reference scenario
+fail_criterion_cost_trucks=2 #cost relative to reference scenario
 #Prepare data, x and y arrays
 x = experiments
-y1=outcomes['CO2 TTW change total']>fail_criterion_CO2
-y2=outcomes['Energy bio total']>fail_criterion_bio
-#Check if either of fail
-y3=[0]*len(x)
-for j in range(len(y1)):
-    if y1[j]==True or y2[j]==True:
-        y3[j]=True
+
+y_CO2=outcomes['CO2 TTW change total']>fail_criterion_CO2
+y_bio=outcomes['Energy bio total']>fail_criterion_bio
+y_light_cost=outcomes['Driving cost light vehicles relative reference']>fail_criterion_cost_light
+y_truck_cost=outcomes['Driving cost trucks relative reference']>fail_criterion_cost_trucks
+
+#Check if at least one criteria fail 
+y_atleastonefail=[0]*len(x)
+for j in range(len(y_CO2)):
+    if True in [y_CO2[j], y_bio[j],y_light_cost[j],y_truck_cost[j]]:
+        y_atleastonefail[j]=True
     else: 
-        y3[j]=False
-#Check if both fail
-y4=[0]*len(x)
-for j in range(len(y1)):
-    if y1[j]==True and y2[j]==True:
-        y4[j]=True
-    else: 
-        y4[j]=False
-#choose criterion to use y1=first criterion only, y2=second criterion only,y3=either first or second criterion=fail, y4=both criterion fail
-y=np.array(y3,dtype=bool)
-y4=np.array(y4,dtype=bool)
-df_full["CO2 target not met"]=y1
-df_full["Bio target not met"]=y2
-df_full["At least one target not met"]=y
-df_full["No target met"]=y4
-#%% Calculate basic statistics
+        y_atleastonefail[j]=False
+    #check if all fail
+    y_allfail=[0]*len(x)
+    if False in[y_CO2[j], y_bio[j],y_light_cost[j],y_truck_cost[j]]:
+        y_allfail[j]=False
+    else:
+        y_allfail[j]=True
+
+#choose criterion to use y
+y_atleastonefail=np.array(y_atleastonefail,dtype=bool)
+y_allfail=np.array(y_allfail,dtype=bool)
+y=y_atleastonefail
+df_full["CO2 target not met"]=y_CO2
+df_full["Bio target not met"]=y_bio
+df_full["Light vehicle cost target not met"]=y_light_cost
+df_full["Truck cost target not met"]=y_truck_cost
+df_full["At least one target not met"]=y_atleastonefail
+df_full["No target met"]=y_allfail
+#%% Calculate basic statistics for fail
 #Basic statistics 
 n_fail = np.count_nonzero(y)
 share_fail=n_fail/len(y)
 share_success=1-share_fail
 
-#Basic statistics per policy
+#Basic fail statistics per policy
 df_policies_out=pd.DataFrame()
 df_policies_out["policy"]=x["policy"].unique()
 
@@ -182,6 +197,10 @@ n_failCO2_list=[]
 failCO2_share_list=[]
 n_failBio_list=[]
 failBio_share_list=[]
+n_failLightCost_list=[]
+failLightCost_share_list=[]
+n_failTruckCost_list=[]
+failTruckCost_share_list=[]
 n_fail_list=[]
 fail_share_list=[]
 n_failNo_list=[]
@@ -193,30 +212,40 @@ for i in df_policies_out["policy"]:
     failCO2_share_list.append(np.count_nonzero(temp["CO2 target not met"])/len(temp))
     n_failBio_list.append(np.count_nonzero(temp["Bio target not met"]))
     failBio_share_list.append(np.count_nonzero(temp["Bio target not met"])/len(temp))
+    n_failLightCost_list.append(np.count_nonzero(temp["Light vehicle cost target not met"]))
+    failLightCost_share_list.append(np.count_nonzero(temp["Light vehicle cost target not met"])/len(temp))
+    n_failTruckCost_list.append(np.count_nonzero(temp["Truck cost target not met"]))
+    failTruckCost_share_list.append(np.count_nonzero(temp["Truck cost target not met"])/len(temp))
     n_fail_list.append(np.count_nonzero(temp["At least one target not met"]))
     fail_share_list.append(np.count_nonzero(temp["At least one target not met"])/len(temp))
     n_failNo_list.append(np.count_nonzero(temp["No target met"]))
     fail_shareNo_list.append(np.count_nonzero(temp["No target met"])/len(temp))
-    
-    
+      
 df_policies_out["CO2 target not met"]=n_failCO2_list
 df_policies_out["CO2 target not met share"]=failCO2_share_list
 df_policies_out["Bio target not met"]=n_failBio_list
 df_policies_out["Bio target not met share"]=failBio_share_list
+df_policies_out["Light vehicle cost target not met"]=n_failLightCost_list
+df_policies_out["Light vehicle cost target not met share"]=failLightCost_share_list
+df_policies_out["Truck cost target not met"]=n_failTruckCost_list
+df_policies_out["Truck cost target not met share"]=failTruckCost_share_list
 df_policies_out["At least one target not met"]=n_fail_list
 df_policies_out["At least one target not met share"]=fail_share_list
 df_policies_out["No target met"]=n_failNo_list
 df_policies_out["No target met share"]=fail_shareNo_list
-
+#%% visualize policy failures
 df_policies_out.plot(x="policy",y=["CO2 target not met share",
                                 "Bio target not met share",
-                                "At least one target not met share","No target met share"],
+                                "Light vehicle cost target not met share",
+                                "Truck cost target not met share",
+                                "At least one target not met share",
+                                "No target met share"],
                   kind="bar",title="Share of experiments where policy fails",
                   ylim=[0,1],
                   )
 plt.xticks(rotation=90)
 
-#%%
+#%% Various scatterplots
 import statistics
 sns.set_palette("bright")
 plt.figure()
@@ -238,11 +267,13 @@ sns.scatterplot(x='Car el share', y='Energy bio total',
               data=df_full, hue="policy", alpha=0.5)
 plt.show()
 
-sns.scatterplot(x='CO2 TTW change light vehicles', y='Driving cost light vehicles', 
+sns.scatterplot(x='CO2 TTW change light vehicles', 
+                y='Driving cost light vehicles relative reference', 
               data=df_full, hue="policy", alpha=0.5)
 plt.show()
 
-sns.scatterplot(x='CO2 TTW change trucks', y='Driving cost trucks', 
+sns.scatterplot(x='CO2 TTW change trucks', 
+                y='Driving cost trucks relative reference', 
               data=df_full, hue="policy", alpha=0.5)
 plt.show()
 
@@ -250,15 +281,9 @@ sns.scatterplot(x='CO2 TTW change trucks', y='VKT trucks',
               data=df_full, hue="policy", alpha=0.5)
 plt.show()
 
-#%%
-sns.violinplot(x='policy', y='VKT trucks', 
-              data=df_full, inner="quart",hue="No target met", split=True )
-plt.xticks(rotation=90)
-plt.show()
-
-sns.violinplot(x='policy', y='VKT total', 
-              data=df_full, inner="quart",hue="No target met", split=True )
-plt.xticks(rotation=90)
+sns.scatterplot(x='Driving cost trucks relative reference', y='VKT trucks', 
+              data=df_full,  alpha=0.5)
+plt.axhline(y=0, color="black")
 plt.show()
 #%% Distribution and box plot of policies
 #Plot hist/KDE on CO2 criterion
@@ -271,9 +296,34 @@ plt.axvline(fail_criterion_CO2,color="red",
 sns.displot(x='Energy bio total', data=df_full, hue="policy", kde=True)
 plt.axvspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
             facecolor='red', alpha=0.05,edgecolor='None')
-plt.axvline(statistics.mean(outcomes['Energy bio total']),color="red",ls="--")
 
-#Plot box on CO2 criterion
+#Plot driving cost distributions
+sns.displot(x='Driving cost light vehicles relative reference', data=df_full, hue="policy",kde=True)
+sns.displot(x='Driving cost trucks relative reference', data=df_full, hue="policy",kde=True)
+
+#Plot VKT distributions
+sns.displot(x='VKT trucks', data=df_full, hue="policy",kde=True)
+sns.displot(x='VKT light vehicles', data=df_full, hue="policy",kde=True)
+
+# policy distribution on target outcomes
+grid = sns.FacetGrid(data=df_full, col="policy",hue="policy",
+                     col_wrap=4, height=6, sharex=True,sharey=True)
+grid.map(sns.histplot, 'CO2 TTW change total', kde=True)
+
+grid = sns.FacetGrid(data=df_full, col="policy",hue="policy",
+                     col_wrap=4, height=6, sharex=True,sharey=True)
+grid.map(sns.histplot, 'Energy bio total', kde=True)
+
+grid = sns.FacetGrid(data=df_full, col="policy",hue="policy",
+                     col_wrap=4, height=6, sharex=True,sharey=True)
+grid.map(sns.histplot, 'Driving cost light vehicles relative reference', kde=True)
+
+grid = sns.FacetGrid(data=df_full, col="policy",hue="policy",
+                     col_wrap=4, height=6, sharex=True,sharey=True)
+grid.map(sns.histplot, 'Driving cost trucks relative reference', kde=True)
+
+
+#box plot on CO2 criterion
 plt.figure()
 sns.boxplot(x='policy', y='CO2 TTW change total', data=df_full)
 plt.axhspan(fail_criterion_CO2, max(outcomes['CO2 TTW change total']), 
@@ -282,7 +332,7 @@ plt.axhline(fail_criterion_CO2,color="red",
             ls="--")
 plt.xticks(rotation=90)
 
-#Plot box on bio criterion
+#box plot  on bio criterion
 plt.figure()
 sns.boxplot(x='policy', y='Energy bio total', data=df_full)
 plt.axhspan(fail_criterion_bio, max(outcomes['Energy bio total']), 
@@ -290,6 +340,26 @@ plt.axhspan(fail_criterion_bio, max(outcomes['Energy bio total']),
 plt.axhline(fail_criterion_bio,color="red", 
             ls="--")
 plt.xticks(rotation=90)
+
+
+#box plot  on cost criterion
+plt.figure()
+sns.boxplot(x='policy', y='Driving cost light vehicles relative reference', data=df_full)
+# plt.axhspan('Driving cost light vehicles relative reference', max(outcomes['Driving cost light vehicles relative reference']), 
+#             facecolor='red', alpha=0.05,edgecolor='None')
+# plt.axhline(fail_criterion_cost_light,color="red", 
+#             ls="--")
+plt.xticks(rotation=90)
+
+plt.figure()
+sns.boxplot(x='policy', y='Driving cost trucks relative reference', data=df_full)
+# plt.axhspan('Driving cost light vehicles relative reference', max(outcomes['Driving cost light vehicles relative reference']), 
+#             facecolor='red', alpha=0.05,edgecolor='None')
+# plt.axhline(fail_criterion_cost_light,color="red", 
+#             ls="--")
+plt.xticks(rotation=90)
+
+
 #%% Violin plots
 plt.figure()
 sns.violinplot(x='policy', y='CO2 TTW change total', data=df_full,
@@ -319,10 +389,78 @@ plt.axvspan(fail_criterion_CO2, xlim[1],facecolor='red', alpha=0.1,
             edgecolor='none')
 plt.axvspan(xlim[0],fail_criterion_CO2,fail_criterion_bio/ylim[1],
             facecolor='red', alpha=.1,edgecolor='none')
+#%% Scatter on energy consumption and target criteria
+grid = sns.FacetGrid(data=df_full, col="policy",
+                     hue="At least one target not met",
+                     col_wrap=4, height=6, sharex=True,sharey=True)
+grid.map(sns.scatterplot, 'Electric share of total energy',
+         "VKT total")
 
-#%%
-# Feature scoring on scenario disocvery data (what ucnertainties drive fail/success of outcomes)
-fs_discovery, alg = feature_scoring.get_ex_feature_scores(x, y, mode=feature_scoring.RuleInductionType.CLASSIFICATION)
+grid = sns.FacetGrid(data=df_full, col="policy",
+                     hue="At least one target not met",
+                     col_wrap=4, height=6, sharex=True,sharey=True)
+grid.map(sns.scatterplot, 'Electric share of total energy',
+         "Energy total", legend=True)
+
+#%% Violinplots on outcomes
+plt.figure()
+sns.violinplot(x='policy', y='VKT trucks', 
+              data=df_full, inner="quart",hue="At least one target not met", split=True )
+plt.xticks(rotation=90)
+plt.show()
+
+sns.violinplot(x='policy', y='VKT total', 
+              data=df_full, inner="quart",hue="At least one target not met", split=True )
+plt.xticks(rotation=90)
+plt.show()
+#%% calculate "policy rank" per scenario
+policy_rank_CO2=np.empty(df_full.shape[0])
+for i in df_full["scenario"]:
+    a=df_full[df_full['scenario'] == i]
+    a=a.sort_values(by="CO2 TTW change total")
+    rank_count=1
+    for j in a.index:
+        policy_rank_CO2[j]=rank_count
+        rank_count=rank_count+1
+        
+policy_rank_bio=np.empty(df_full.shape[0])
+for i in df_full["scenario"]:
+    a=df_full[df_full['scenario'] == i]
+    a=a.sort_values(by="Energy bio total")
+    rank_count=1
+    for j in a.index:
+        policy_rank_bio[j]=rank_count
+        rank_count=rank_count+1
+
+
+df_policyrank=pd.DataFrame(policy_rank_CO2, columns=["policy rank CO2"])
+df_policyrank["policy rank bio"]=policy_rank_bio
+df_policyrank["scenario"]=df_full["scenario"]
+df_policyrank["policy"]=df_full["policy"]
+#%% Visualize policy rank
+
+grid = sns.FacetGrid(data=df_policyrank, col="policy",hue="policy",
+                     col_wrap=4, height=5, sharex=True,sharey=True, 
+                     )
+grid.map(sns.histplot, 'policy rank CO2', bins=8)
+
+grid = sns.FacetGrid(data=df_policyrank, col="policy",hue="policy",
+                     col_wrap=4, height=5, sharex=True,sharey=True)
+grid.map(sns.histplot, 'policy rank bio', bins=8)
+
+plt.figure()
+sns.histplot(df_policyrank,x="policy rank CO2", y="policy rank bio", 
+             hue = "policy")
+
+#%%# Feature scoring on scenario disocvery data (what drive fail/success of outcomes), without "policy"
+
+fs_discovery, alg = feature_scoring.get_ex_feature_scores(x.drop(columns="policy"), y, mode=feature_scoring.RuleInductionType.CLASSIFICATION)
+fs_discovery.sort_values(ascending=False, by=1)
+plt.figure()
+fig=sns.heatmap(fs_discovery, cmap='viridis', annot=True)
+
+#%%# Feature scoring on scenario disocvery data (what drive fail/success of outcomes), without "levers"
+fs_discovery, alg = feature_scoring.get_ex_feature_scores(x.drop(columns=model.levers._data.keys()), y, mode=feature_scoring.RuleInductionType.CLASSIFICATION)
 fs_discovery.sort_values(ascending=False, by=1)
 plt.figure()
 fig=sns.heatmap(fs_discovery, cmap='viridis', annot=True)
@@ -356,6 +494,7 @@ plt.show()
 
 #Set up PRIM
 from ema_workbench.analysis import prim
+#prim_alg = prim.Prim(x.drop(columns="policy"), y, threshold=0.5)
 prim_alg = prim.Prim(x, y, threshold=0.5)
 #%%
 #Find 1st box
@@ -367,15 +506,15 @@ box1.show_tradeoff()
 for i in range(0,len(box1.peeling_trajectory.T.columns)):
     s=box1.peeling_trajectory.T[i].id
     if (i%2)==0:
-        plt.text(box1.peeling_trajectory.T[i].coverage+.02,box1.peeling_trajectory.T[i].density-.03 ,s,fontsize=10)
+        plt.text(box1.peeling_trajectory.T[i].coverage-.02,box1.peeling_trajectory.T[i].density ,s,fontsize=10)
     else:
-        plt.text(box1.peeling_trajectory.T[i].coverage-.03,box1.peeling_trajectory.T[i].density+.03 ,s,fontsize=10)
+        plt.text(box1.peeling_trajectory.T[i].coverage+.02,box1.peeling_trajectory.T[i].density ,s,fontsize=10)
 plt.show()
 
-#Choose point for inspection
+#%%Choose point for inspection
 i1=round((len(box1.peeling_trajectory.T.columns)-1))
 #or choose box manually
-#i1=17
+i1=20
 box1.inspect(i1)
 box1.inspect(i1, style='graph')
 plt.show()
