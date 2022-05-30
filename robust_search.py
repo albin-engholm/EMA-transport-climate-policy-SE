@@ -4,7 +4,7 @@ Created on Mon Mar 28 21:05:08 2022
 
 @author: aengholm
 This is a script for setting up and running robust search over policy levers for a static 
-excel model with parametric uncertaintie. It is designed for the TRV scenario model.
+excel model with parametric uncertainties. It is designed for the TRV scenario model.
 Results are saved and can be loaded for analysis in separate script - 
 e.g. scenario_exploration_excel_static.py'
 """
@@ -132,7 +132,6 @@ if __name__ == "__main__":
                       #ScalarOutcome("Total cost cars",
                                   #  variable_name="D75")
                       ]  
-    
 
     #%% Create robustness metrics
     import functools
