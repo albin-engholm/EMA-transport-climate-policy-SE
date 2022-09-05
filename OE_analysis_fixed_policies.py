@@ -41,8 +41,8 @@ sns.set_palette(sns.color_palette(colors_policy))
 #%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
 n_policies=9
-n_scenarios=500
-date='2022-05-11'
+n_scenarios=5000
+date='2022-06-15'
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
@@ -130,7 +130,7 @@ if parcoords == 1:
 # fig,axes = pairs_scatter(experiments,outcomes, legend=True, group_by="policy")
 # fig.set_size_inches(25,25)
 # plt.show()
-sns.set_palette(sns.color_palette(colors_policy))
+sns.set_palette(policy_palette)
 sns.set(font_scale=1.5)
 g=sns.pairplot(data=df_outcomes.drop(columns=["VKT trucks",
                                                       "VKT light vehicles", 
@@ -138,8 +138,9 @@ g=sns.pairplot(data=df_outcomes.drop(columns=["VKT trucks",
                                                         "CO2 TTW change light vehicles",
                                                         "Electrified VKT share light vehicles",
                                                         "Electrified VKT share trucks"]), 
-                       hue="policy", 
-                       plot_kws={'alpha':0.1})
+                       hue="policy",
+                       palette=policy_palette,
+                       plot_kws={'alpha':0.25})
 
 for ax in g.axes.flatten(): #Rotate labels
     # rotate x axis labels
@@ -152,7 +153,8 @@ for ax in g.axes.flatten(): #Rotate labels
     ax.yaxis.get_label().set_horizontalalignment('right')
 sns.move_legend(g, "center left", bbox_to_anchor=(0.85, 0.5))
 g.fig.set_size_inches(15,15)
-# plt.show()
+
+plt.show()
 sns.set(font_scale=1)
 #%% mega plot
 # df_full2=df_full.drop(columns=["ICE CO2 reduction ambition level",
@@ -165,8 +167,6 @@ sns.set(font_scale=1)
 #                                 "km-tax light vehicles",
 #                                 "km-tax trucks"]
 #                       )
-
-
 
 #%%FEATURE SCORING ON OUTCOMES
 
@@ -184,7 +184,6 @@ fs = feature_scoring.get_feature_scores_all(experiments.drop(columns="policy"), 
 plt.figure()
 fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
 plt.title("Feature scoring, levers, no policy")
- 
 
 ### scenario discovery
 #%% Calculate whether targets are met
@@ -327,6 +326,10 @@ sns.scatterplot(x='Driving cost trucks relative reference', y='VKT trucks',
               data=df_full,  alpha=0.5)
 plt.axhline(y=0, color="black")
 plt.show()
+
+sns.scatterplot(x='Delta CS tax', y='CO2 TTW change total', 
+              data=df_full, hue="policy",  alpha=0.5)
+plt.show()
 #%% Distribution and box plot of policies
 #Plot hist/KDE on CO2 criterion
 sns.set_palette(sns.color_palette(colors_policy))
@@ -348,6 +351,11 @@ sns.displot(x='Driving cost trucks relative reference', data=df_full, hue="polic
 #Plot VKT distributions
 sns.displot(x='VKT trucks', data=df_full, hue="policy",kde=True)
 sns.displot(x='VKT light vehicles', data=df_full, hue="policy",kde=True)
+
+#Plot CS and tax income distributions
+sns.displot(x='Delta CS total', data=df_full, hue="policy",kde=True)
+sns.displot(x='Delta tax income total', data=df_full, hue="policy",kde=True)
+sns.displot(x='Delta CS tax', data=df_full, hue="policy",kde=True)
 
 # policy distribution on target outcomes
 grid = sns.FacetGrid(data=df_full, col="policy",hue="policy",
@@ -568,7 +576,7 @@ plt.show()
 #%%Choose point for inspection
 i1=round((len(box1.peeling_trajectory.T.columns)-1))
 #or choose box manually
-i1=5
+i1=1
 box1.inspect(i1)
 box1.inspect(i1, style='graph')
 plt.show()

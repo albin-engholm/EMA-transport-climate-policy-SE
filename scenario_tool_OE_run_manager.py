@@ -21,31 +21,31 @@ if __name__ == "__main__":
     #Set model
     model = ExcelModel("scenarioModel", wd="./models",
                        model_file='trv_scenario2.xlsx')
-    model.default_sheet = "Indata"
+    model.default_sheet = "EMA"
 
     #%% Specify inputs
     #Set parametric uncetainties
     model.uncertainties = [RealParameter("Heavy truck el share",
-                                         .03,0.5
-                                         ,variable_name="D79")
+                                         .02,0.5
+                                         ,variable_name="B6")
                           ,RealParameter("Truck demand change",
                                          -0.2,0.20,
-                                         variable_name="F61")
+                                         variable_name="B4")
                           ,RealParameter("Car el share",
                                          0.18,0.7,
-                                         variable_name="F28")
+                                         variable_name="B5")
                           ,RealParameter("Car demand change",
                                          -0.2,0.2
-                                         ,variable_name="F38")
+                                         ,variable_name="B3")
                           ,RealParameter("Fossile price adjustment",
                                          0.8,1.5,
-                                         variable_name="Modell - Drivmedelpriser!G5")
+                                         variable_name="B7")
                           ,RealParameter("Biofuel price adjustment",
                                          0.8,2.5,
-                                         variable_name="Modell - Drivmedelpriser!G6")
+                                         variable_name="B8")
                           ,RealParameter("Electricity price adjustment",
                                          .5,2
-                                         ,variable_name="Modell - Drivmedelpriser!G4")
+                                         ,variable_name="B9")
                           # ,RealParameter("Truck demand elasticity",
                           #                -.5,-.1
                           #                ,variable_name="D78")
@@ -56,95 +56,111 @@ if __name__ == "__main__":
     #Specification of levers
     model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
                                          ["1 Beslutad politik","2 Mer ambitios politik"]
-                                         ,variable_name="F17"),
+                                         ,variable_name="Indata!F17"),
                     CategoricalParameter("Bus energy consumption",
                                          ["Beslutad politik","Level 1","Level 2"]
-                                         ,variable_name="F23"),
+                                         ,variable_name="Indata!F23"),
                     RealParameter("Share HVO diesel",
                                   0, 0.80,
-                                  variable_name="F12"),
+                                  variable_name="Indata!F12"),
                     RealParameter("Share FAME diesel",
                                   0, 0.07,
-                                  variable_name="F11"),
+                                  variable_name="Indata!F11"),
                     RealParameter("Share HVO gasoline", 
                                   0, 0.7,
-                                  variable_name="F10"),
+                                  variable_name="Indata!F10"),
                     RealParameter("Share ethanol gasoline", 
                                   0, 0.1,
-                                  variable_name="F11"),
+                                  variable_name="Indata!F11"),
                     RealParameter("km-tax light vehicles",
                                   0,2
-                                  ,variable_name="F15"),
+                                  ,variable_name="Indata!F15"),
                     RealParameter("km-tax trucks",
                                   0,3
-                                  ,variable_name="F16"),
+                                  ,variable_name="Indata!F16"),
                     RealParameter("Change in fuel tax gasoline",
                                   0,.20
-                                  ,variable_name="F13"),
+                                  ,variable_name="Indata!F13"),
                     RealParameter("Change in fuel tax diesel",
                                   0,.20
-                                  ,variable_name="F14"),
+                                  ,variable_name="Indata!F14"),
                     RealParameter("Additional energy efficiency light vehicles",
                                   0,.1
-                                  ,variable_name="F19"),
+                                  ,variable_name="Indata!F19"),
                     RealParameter("Additional energy efficiency trucks",
                                   0,.1
-                                  ,variable_name="F20"),
+                                  ,variable_name="Indata!F20"),
                     RealParameter("Transport efficient society light vehicles",
                                   0,.20
-                                  ,variable_name="F21"),
+                                  ,variable_name="Indata!F21"),
                     RealParameter("Transport efficient society trucks",
                                   0,.15
-                                  ,variable_name="F22"),
+                                  ,variable_name="Indata!F22"),
 
                     ]
     # specification of the outcomes
-    model.outcomes = [ScalarOutcome("CO2 TTW change trucks",
-                                    variable_name="D66"),
+    model.outcomes = [
                       ScalarOutcome("CO2 TTW change light vehicles",
-                                                      variable_name="D74"),
+                                                      variable_name="B32"),
+                      ScalarOutcome("CO2 TTW change trucks",
+                                                      variable_name="B33"),
                       ScalarOutcome("CO2 TTW change total", 
-                                    variable_name="D67"),
-                      ScalarOutcome("VKT trucks", 
-                                    variable_name="D68"),
-                      ScalarOutcome("Energy total", 
-                                    variable_name="D70"),
-                      ScalarOutcome("Energy bio total", 
-                                    variable_name="D71"),
-                      # ScalarOutcome("Energy fossile total", 
-                      #               variable_name="D72"),
-                      ScalarOutcome("Energy el total",
-                                    variable_name="D73"),
+                                    variable_name="B34"),
+                      
                       ScalarOutcome("VKT light vehicles",
-                                    variable_name="Resultat!F30"),
+                                    variable_name="B35"),
+                      ScalarOutcome("VKT trucks", 
+                                    variable_name="B36"),
                       ScalarOutcome("VKT total",
-                                    variable_name="Resultat!F34"),
-                      # ScalarOutcome("Driving cost light vehicles",
-                      #               variable_name="Resultat!F23"),
-                      # ScalarOutcome("Driving cost trucks",
-                      #               variable_name="Resultat!F26"),
+                                    variable_name="B37"),
+                      
+
+                      ScalarOutcome("Energy bio total", 
+                                    variable_name="B38"),
+                      ScalarOutcome("Energy fossile total", 
+                                     variable_name="B39"),
+                      ScalarOutcome("Energy el total",
+                                    variable_name="B40"),
+                      ScalarOutcome("Energy total", 
+                                    variable_name="B41"),
+
+
+
                       ScalarOutcome("Electrified VKT share light vehicles",
-                                    variable_name="Resultat!F35"),
+                                    variable_name="B42"),
                       ScalarOutcome("Electrified VKT share trucks",
-                                    variable_name="Resultat!F36"),
+                                    variable_name="B43"),
                       ScalarOutcome("Electric share of total energy",
-                                    variable_name="D75"),
+                                    variable_name="B44"),
+                      
                       ScalarOutcome("Driving cost light vehicles relative reference",
-                                    variable_name="D76"),
+                                    variable_name="B45"),
                       ScalarOutcome("Driving cost trucks relative reference",
-                                    variable_name="D77")
-                      #ScalarOutcome("Total cost trucks",
-                                    #variable_name="D74"),
-                      #ScalarOutcome("Total cost cars",
-                                  #  variable_name="D75")
+                                    variable_name="B46"),
+                      
+                      ScalarOutcome("Delta CS light vehicles",
+                                                      variable_name="B47"),
+                      ScalarOutcome("Delta CS trucks",
+                                                      variable_name="B48"),
+                      ScalarOutcome("Delta CS total", 
+                                    variable_name="B49"),
+                      
+                      ScalarOutcome("Delta tax income total",
+                                                      variable_name="B50"),
+                      
+                      ScalarOutcome("Delta CS tax",
+                                                      variable_name="B51"),
 
                       ]  
     
     #%% Specify policies
     from ema_workbench.em_framework import samplers
+    manual_policies=True #Use the pre-specified 9 policies?
     n_policies=200
+    if manual_policies:
+        n_policies=9
     policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())
-    manual_policies=False #Use the pre-specified 9 policies?
+    
     #%% manual specification of policies   
     if manual_policies: # overide the pre-sampled policies
         policy1=(0,     #Additional energy efficiency light vehicles [%]
@@ -287,7 +303,7 @@ if __name__ == "__main__":
                       "Reference - planned policies"]
     #%%    #Run model - for open exploration
     #Simulation settings
-    nr_scenarios=200  #select number of scenarios (per policy)
+    nr_scenarios=5000  #select number of scenarios (per policy)
     run_with_policies=1
     use_multi=1
     n_p=4

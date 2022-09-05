@@ -40,9 +40,9 @@ policy_palette = sns.set_palette(sns.color_palette(colors_policy))
 sns.set_palette(sns.color_palette(colors_policy))
 #%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
-n_policies=200
-n_scenarios=200
-date='2022-05-25'
+n_policies=20
+n_scenarios=20
+date='2022-06-22'
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
@@ -186,7 +186,7 @@ plt.title("Feature scoring, levers, no policy")
 ### scenario discovery
 #%% Calculate whether targets are met
 #Define criterion for unwanted outcome and store in xdf
-fail_criterion_CO2=-0.7 #expressed as relative change in annual GHG equivalents compared to 2010
+fail_criterion_CO2=-0.9 #expressed as relative change in annual GHG equivalents compared to 2010
 fail_criterion_bio=15 # tWh annual bioenergy use 
 fail_criterion_cost_light=2 #cost relative to reference scenario
 fail_criterion_cost_trucks=2 #cost relative to reference scenario

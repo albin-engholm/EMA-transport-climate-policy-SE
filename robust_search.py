@@ -9,8 +9,6 @@ Results are saved and can be loaded for analysis in separate script -
 e.g. scenario_exploration_excel_static.py'
 """
 
-
-
 from ema_workbench import (RealParameter, CategoricalParameter, 
                            ScalarOutcome, ema_logging,
                            perform_experiments)
