@@ -39,7 +39,7 @@ colors_policy=["#12c400",  # B startegies = green
 policy_palette = sns.set_palette(sns.color_palette(colors_policy))
 sns.set_palette(sns.color_palette(colors_policy))
 
-hue_marker=[".",".",".",".",".",".",".",".","."]
+#hue_marker=[".",".",".",".",".",".",".",".","."]
 #%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
 n_policies=9
@@ -183,6 +183,22 @@ plt.figure()
 fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
 plt.title("Feature scoring, levers, no policy")
 
+# Feature scoring on CO2 outcomes only 
+outcomes_CO2=df_outcomes[["CO2 TTW change total","CO2 TTW change trucks", "CO2 TTW change light vehicles"]].to_dict(orient="list")
+fs = feature_scoring.get_feature_scores_all(experiments, outcomes_CO2)
+plt.figure()
+fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
+plt.title("Feature scoring, all parameters")
+
+fs = feature_scoring.get_feature_scores_all(experiments.drop(columns=model.levers._data.keys()), outcomes_CO2)
+plt.figure()
+fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
+plt.title("Feature scoring, no individual levers")
+
+fs = feature_scoring.get_feature_scores_all(experiments.drop(columns="policy"), outcomes_CO2)
+plt.figure()
+fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
+plt.title("Feature scoring, levers, no policy")
 ### scenario discovery
 #%% Calculate whether targets are met
 #Define criterion for unwanted outcome and store in xdf
@@ -290,7 +306,8 @@ import statistics
 sns.set_palette(sns.color_palette(colors_policy))
 plt.figure()
 sns.scatterplot(y='CO2 TTW change total', x='Energy bio total', 
-              data=df_full, hue="policy", alpha=0.5,marker=hue_marker)
+              data=df_full, hue="policy", alpha=0.5,)
+#marker=hue_marker
 plt.xlabel("Energy bio total [TWh]")
 plt.ylabel("Change in CO2 cmpr.2010, TTW")
 plt.show()
