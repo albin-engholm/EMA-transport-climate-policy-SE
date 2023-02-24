@@ -2,7 +2,6 @@
 """
 Created on Thu Sep 23 10:20:38 2021
 This is a script for performing open exploration for Trafikverkets scenario tool
-The data should be produced using the "exceltest_scenario.py" script.
 This script is designed for a fixed set of 9 policies (as used in Trafikverkets analysis)
 @author: aengholm
 """
@@ -43,8 +42,8 @@ sns.set_palette(sns.color_palette(colors_policy))
 #%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
 n_policies=9
-n_scenarios=1000
-date='2022-06-22'
+n_scenarios=5000
+date='2023-02-21'
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
@@ -142,28 +141,28 @@ if parcoords == 1:
 sns.set_palette(policy_palette)
 sns.set_palette(sns.color_palette(colors_policy))
 #sns.set(font_scale=1.5)
-g=sns.pairplot(data=df_outcomes.drop(columns=["VKT trucks",
-                                                      "VKT light vehicles", 
-                                                        "CO2 TTW change trucks",
-                                                        "CO2 TTW change light vehicles",
-                                                        "Electrified VKT share light vehicles",
-                                                        "Electrified VKT share trucks"]), 
-                       hue="policy",
-                       plot_kws={'alpha':0.25})
+# g=sns.pairplot(data=df_outcomes.drop(columns=["VKT trucks",
+#                                                       "VKT light vehicles", 
+#                                                         "CO2 TTW change trucks",
+#                                                         "CO2 TTW change light vehicles",
+#                                                         "Electrified VKT share light vehicles",
+#                                                         "Electrified VKT share trucks"]), 
+#                        hue="policy",
+#                        plot_kws={'alpha':0.25})
 
-# for ax in g.axes.flatten(): #Rotate labels
-#     # rotate x axis labels
-#     ax.set_xlabel(ax.get_xlabel(), rotation = 90)
-#     #Align x axis labels
-#     ax.yaxis.get_label().set_horizontalalignment('left')
-#     # rotate y axis labels
-#     ax.set_ylabel(ax.get_ylabel(), rotation = 0)
-#     # set y labels alignment
-#     ax.yaxis.get_label().set_horizontalalignment('right')
-#sns.move_legend(g, "center left", bbox_to_anchor=(0.85, 0.5))
-#g.fig.set_size_inches(15,15)
+# # for ax in g.axes.flatten(): #Rotate labels
+# #     # rotate x axis labels
+# #     ax.set_xlabel(ax.get_xlabel(), rotation = 90)
+# #     #Align x axis labels
+# #     ax.yaxis.get_label().set_horizontalalignment('left')
+# #     # rotate y axis labels
+# #     ax.set_ylabel(ax.get_ylabel(), rotation = 0)
+# #     # set y labels alignment
+# #     ax.yaxis.get_label().set_horizontalalignment('right')
+# #sns.move_legend(g, "center left", bbox_to_anchor=(0.85, 0.5))
+# #g.fig.set_size_inches(15,15)
 
-plt.show()
+# plt.show()
 #sns.set(font_scale=1)
 
 #%%FEATURE SCORING ON OUTCOMES
@@ -203,7 +202,7 @@ plt.title("Feature scoring, levers, no policy")
 #%% Calculate whether targets are met
 #Define criterion for unwanted outcome and store in xdf
 fail_criterion_CO2=-0.9 #expressed as relative change in annual GHG equivalents compared to 2010
-fail_criterion_bio=10 # tWh annual bioenergy use 
+fail_criterion_bio=13 # tWh annual bioenergy use 
 fail_criterion_cost_light=2 #cost relative to reference scenario
 fail_criterion_cost_trucks=2 #cost relative to reference scenario
 #Prepare data, x and y arrays
@@ -573,21 +572,24 @@ plt.figure()
 fig=sns.heatmap(fs_discovery, cmap='viridis', annot=True)
 #%%
 #Scatter pair plot for all uncertainties and whether or not target is met
-x_copy2 = experiments.copy()
-x_copy2= x_copy2.drop('scenario', axis=1)
-x_copy2["Target not met"]=y
-g= sns.PairGrid(x_copy2, hue="Target not met")
-g.map_diag(sns.kdeplot, shade=True)
-g.map_offdiag(plt.scatter,edgecolor="white",alpha=0.5)
-g.add_legend()
-g.fig.set_size_inches(20,20)
+# x_copy2 = experiments.copy()
+# x_copy2= x_copy2.drop('scenario', axis=1)
+# x_copy2["Target not met"]=y
+# g= sns.PairGrid(x_copy2, hue="Target not met")
+# g.map_diag(sns.kdeplot, shade=True)
+# g.map_offdiag(plt.scatter,edgecolor="white",alpha=0.5)
+# g.add_legend()
+# g.fig.set_size_inches(20,20)
 #%%
 #Dimensional stacking
+x = experiments
+y = y_CO2 #Choose what criterion to use for the analysis
+y= y_atleastonefail
 from ema_workbench.analysis import dimensional_stacking
-dimensional_stacking.create_pivot_plot(x,y, 2, nbins=5)
+dimensional_stacking.create_pivot_plot(x,y, 2, nbins=4)
 plt.show()
-#%%
-#Regional sensitivty analysis, # model is the same across experiments
+#%% Regional sensitivty analysis, 
+# model is the same across experiments
 sns.color_palette()
 from ema_workbench.analysis import regional_sa
 sns.set_style('white')
@@ -601,8 +603,9 @@ plt.show()
 
 #%%% SCENARIO DISCOVERY (PRIM) %%%#
 # prepare data
-x = experiments
-y = y_CO2 #Choose what criterion to use for the analysis
+# x = experiments
+# y = y_CO2 #Choose what criterion to use for the analysis
+# y= y_atleastonefail
 #%%%#Perform PRIM analysis for all policies
 #Set up PRIM
 from ema_workbench.analysis import prim

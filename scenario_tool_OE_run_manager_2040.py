@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     #Set model
     model = ExcelModel("scenarioModel", wd="./models",
-                       model_file='trv_scenario2.xlsx')
+                       model_file='trv_scenario_AV.xlsx')
     model.default_sheet = "EMA"
 
     #%% Specify inputs
@@ -41,14 +41,17 @@ if __name__ == "__main__":
                                          -0.2,0.2
                                          ,variable_name="C3")
                           ,RealParameter("Fossile price adjustment",
-                                         0.8,1.5,
+                                         0.8,2.5,
                                          variable_name="C7")
                           ,RealParameter("Biofuel price adjustment",
                                          0.8,2.5,
                                          variable_name="C8")
                           ,RealParameter("Electricity price adjustment",
-                                         .5,2
+                                         .5,2.5
                                          ,variable_name="C9")
+                          # ,RealParameter("AV penetration trucks",
+                          #                0,1
+                          #                ,variable_name="C11")
                           # ,RealParameter("Truck demand elasticity",
                           #                -.5,-.1
                           #                ,variable_name="D78")
@@ -56,7 +59,7 @@ if __name__ == "__main__":
                           #                -.5,-.1
                           #                ,variable_name="D80")
                           ]
-    #Select whether if electrification should be treated as an extenral uncertainty (True)
+    #Select whether if electrification should be treated as an external uncertainty (True)
     External_electrification_rate=False
     if External_electrification_rate==False:         
         model.constants = [Constant("C10","No")] #Set external electrification parameter in excel to no
@@ -64,6 +67,8 @@ if __name__ == "__main__":
         model.uncertainties._data.pop("Heavy truck el share")
     else:
         model.constants = [Constant("C10", "Yes")]
+   #Set elasticity heavy vehicles 
+    model.constants = [Constant("C22", -.9)]
     
     #Specification of levers
     model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
@@ -169,12 +174,11 @@ if __name__ == "__main__":
     #%% Specify policies
     from ema_workbench.em_framework import samplers
     manual_policies=True #Use the pre-specified 9 policies?
-    n_policies=20
+    n_policies=9
     if manual_policies:
         n_policies=9
     policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())
-    
-    #%% manual specification of policies   
+        #%% manual specification of policies   
     if manual_policies: # overide the pre-sampled policies
         policy1=(0,     #Additional energy efficiency light vehicles [%]
                  0,  #Additional energy efficiency trucks [%]
@@ -303,23 +307,23 @@ if __name__ == "__main__":
                  0,     #km-tax light vehicles [SEK/km]
                  0)     #km-tax trucks [SEK/km]
 
-        all_policies=[policy1,policy2,policy3,policy4,policy5,policy6,policy7,policy8, policy9]
-        policies.designs=all_policies
-        policy_names=["B  Bio fuels",
-                      "C1 High fuel tax, biofuels <20TWh",
-                      "C2 Fuel and km-tax, biofuels <20TWh",
-                      "C3 High fuel and km-tax, biofuels <13TWh",
-                      "C4 High fuel tax, biofuels <13TWh",
-                      "D1 Transport efficiency, fuel and km-tax, biofuels <20TWh",
-                      "D2 High transport efficiency, high fuel and km-tax, biofuels <13TWh",
-                      "D3 High transport efficiency, high fuel and km-tax, biofuels <13TWh",
-                      "Reference - planned policies"]
+    all_policies=[policy1,policy2,policy3,policy4,policy5,policy6,policy7,policy8, policy9]
+    policies.designs=all_policies
+    policy_names=["B  Bio fuels",
+                  "C1 High fuel tax, biofuels <20TWh",
+                  "C2 Fuel and km-tax, biofuels <20TWh",
+                  "C3 High fuel and km-tax, biofuels <13TWh",
+                  "C4 High fuel tax, biofuels <13TWh",
+                  "D1 Transport efficiency, fuel and km-tax, biofuels <20TWh",
+                  "D2 High transport efficiency, high fuel and km-tax, biofuels <13TWh",
+                  "D3 High transport efficiency, high fuel and km-tax, biofuels <13TWh",
+                  "Reference - planned policies"]
     #%%    #Run model - for open exploration
     #Simulation settings
-    nr_scenarios=1000  #select number of scenarios (per policy)
+    nr_scenarios=10  #select number of scenarios (per policy)
     run_with_policies=1
     use_multi=1
-    n_p=4
+    n_p=3
     
     #Run
     import time

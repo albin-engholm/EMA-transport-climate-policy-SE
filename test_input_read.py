@@ -29,16 +29,26 @@ if __name__ == "__main__":
 #%% read inputs from Excel sheet
     import pandas as pd
     
-    df_uncertainties = pd.read_excel (r'C:\Users\aengholm\MUST code repository\climate_scenarios_EMA\input_data\input_test.xlsx')
+    df_inputs = pd.read_excel (r'C:\Users\aengholm\MUST code repository\climate_scenarios_EMA\input_data\input_test.xlsx')
+    df_inputs=df_inputs[df_inputs["Use"]==1] #Remove unused inputs
     u=[]
-    for index,row in df_uncertainties.iterrows():
+    for index,row in df_inputs[df_inputs["Input type"]=="U"].iterrows(): #Extract uncerrtainties
         if row["Use"]==1:
-            if row["Type"]=="RealParameter":
+            if row["Parameter type"]=="RealParameter":
                 u.append(RealParameter(row["Name"],row["LB"],row["UB"],variable_name=row["Cell"]))
-            if row["Type"] == "CategoricalParameter":
+            if row["Parameter type"] == "CategoricalParameter":
                 u.append(CategoricalParameter(row["Name"],row["LB"],row["UB"],variable_name=row["Cell"]))
-            if row["Type"] == "IntegerParameter":
+            if row["Parameter type"] == "IntegerParameter":
                 u.append(IntegerParameter(row["Name"],int(row["LB"]),int(row["UB"]),variable_name=row["Cell"]))
+                
+    # for index,row in df_inputs[df_inputs["Input type"]=="L"].iterrows(): #Extract Levers
+    #     if row["Use"]==1:
+    #         if row["Parameter type"]=="RealParameter":
+    #             u.append(RealParameter(row["Name"],row["LB"],row["UB"],variable_name=row["Cell"]))
+    #         if row["Parameter type"] == "CategoricalParameter":
+    #             u.append(CategoricalParameter(row["Name"],row["LB"],row["UB"],variable_name=row["Cell"]))
+    #         if row["Parameter type"] == "IntegerParameter":
+    #             u.append(IntegerParameter(row["Name"],int(row["LB"]),int(row["UB"]),variable_name=row["Cell"]))
         
         
    # print (df_uncertainties)
@@ -46,34 +56,34 @@ if __name__ == "__main__":
     #%% Specify inputs
 
     #Set parametric uncetainties
-    model.uncertainties = [RealParameter("Heavy truck el share",
-                                         .02,0.5
-                                         ,variable_name="C6")
-                          ,RealParameter("Truck demand change",
-                                         -0.2,0.20,
-                                         variable_name="C4")
-                          ,RealParameter("Car el share",
-                                         0.18,0.7,
-                                         variable_name="C5")
-                          ,RealParameter("Car demand change",
-                                         -0.2,0.2
-                                         ,variable_name="C3")
-                          ,RealParameter("Fossile price adjustment",
-                                         0.8,1.5,
-                                         variable_name="C7")
-                          ,RealParameter("Biofuel price adjustment",
-                                         0.8,2.5,
-                                         variable_name="C8")
-                          ,RealParameter("Electricity price adjustment",
-                                         .5,2
-                                         ,variable_name="C9")
-                          # ,RealParameter("Truck demand elasticity",
-                          #                -.5,-.1
-                          #                ,variable_name="D78")
-                          # ,RealParameter("Car demand elasticity",
-                          #                -.5,-.1
-                          #                ,variable_name="D80")
-                          ]
+    # model.uncertainties = [RealParameter("Heavy truck el share",
+    #                                      .02,0.5
+    #                                      ,variable_name="C6")
+    #                       ,RealParameter("Truck demand change",
+    #                                      -0.2,0.20,
+    #                                      variable_name="C4")
+    #                       ,RealParameter("Car el share",
+    #                                      0.18,0.7,
+    #                                      variable_name="C5")
+    #                       ,RealParameter("Car demand change",
+    #                                      -0.2,0.2
+    #                                      ,variable_name="C3")
+    #                       ,RealParameter("Fossile price adjustment",
+    #                                      0.8,1.5,
+    #                                      variable_name="C7")
+    #                       ,RealParameter("Biofuel price adjustment",
+    #                                      0.8,2.5,
+    #                                      variable_name="C8")
+    #                       ,RealParameter("Electricity price adjustment",
+    #                                      .5,2
+    #                                      ,variable_name="C9")
+    #                       # ,RealParameter("Truck demand elasticity",
+    #                       #                -.5,-.1
+    #                       #                ,variable_name="D78")
+    #                       # ,RealParameter("Car demand elasticity",
+    #                       #                -.5,-.1
+    #                       #                ,variable_name="D80")
+    #                       ]
     #Select whether if electrification should be treated as an extenral uncertainty (True)
     External_electrification_rate=False
     if External_electrification_rate==False:         
@@ -186,8 +196,8 @@ if __name__ == "__main__":
     
     #%% Specify policies
     from ema_workbench.em_framework import samplers
-    manual_policies=True #Use the pre-specified 9 policies?
     n_policies=20
+    manual_policies=True #Use the pre-specified 9 policies
     if manual_policies:
         n_policies=9
     policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())
@@ -334,7 +344,7 @@ if __name__ == "__main__":
                       "Reference - planned policies"]
     #%%    #Run model - for open exploration
     #Simulation settings
-    nr_scenarios=1000  #select number of scenarios (per policy)
+    nr_scenarios=50  #select number of scenarios (per policy)
     run_with_policies=1
     use_multi=1
     n_p=4
