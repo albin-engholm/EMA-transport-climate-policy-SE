@@ -8,8 +8,8 @@ Created on Wed Mar 30 13:25:15 2022
 
 load_results=1
 if load_results==1:
-    date="2023-02-07"
-    nfe=50000
+    date="2023-02-27"
+    nfe=10000
     t1='./output_data/'+str(nfe)+"_nfe_"+"directed_search_"+date+".p"
     import pickle
     results,convergence=pickle.load( open(t1, "rb" ))
@@ -31,10 +31,17 @@ import seaborn as sns
 import matplotlib as plt
 plt.rcParams['figure.dpi'] = 300
 sns.set_theme(style="whitegrid")
-g=sns.lineplot(data=results,x="Delta CS tax",y="CO2 TTW change total",markers=True)
+g=sns.scatterplot(data=results,x="Driving cost light vehicles relative reference",y="Energy total",hue="Driving cost trucks relative reference")
 
 g.invert_yaxis()
+g.invert_xaxis()
 
+import plotly.express as px
+from plotly.offline import plot
+fig=px.scatter_3d(data_frame=results,x="Driving cost light vehicles relative reference",y="Energy total",z="Driving cost trucks relative reference")
+fig.show()
+plot(fig)
+#%%
   # Visualize each policy as a dot diagram
 # sns.set_theme(style="whitegrid")
 # sns.set(font_scale=2)
@@ -56,25 +63,25 @@ g.invert_yaxis()
 
 # #df_policies["ICE CO2 reduction ambition level"]=df_policies["ICE CO2 reduction ambition level"].cat.as_ordered()
 # #df_policies["policy"]=df_policies["policy"].cat.as_ordered()
-# from ema_workbench.analysis import parcoords
+from ema_workbench.analysis import parcoords
 
-# data = results.loc[:, [o.name for o in model.outcomes]]
+data = pd.DataFrame.from_dict(results) #results.loc[:, [o.name for o in model.outcomes]]
 
-# # get the minimum and maximum values as present in the dataframe
-# limits = parcoords.get_limits(data)
+# get the minimum and maximum values as present in the dataframe
+limits = parcoords.get_limits(data)
 
-# # we know that the lowest possible value for all objectives is 0
-# limits.loc[0, ["utility", "inertia", "reliability", "max_P"]] = 0
-# # inertia and reliability are defined on unit interval, so their theoretical maximum is 1
-# limits.loc[1, ["inertia", "reliability"]] = 1
+# we know that the lowest possible value for all objectives is 0
+limits.loc[0, ["utility", "inertia", "reliability", "max_P"]] = 0
+# inertia and reliability are defined on unit interval, so their theoretical maximum is 1
+limits.loc[1, ["inertia", "reliability"]] = 1
 
-# paraxes = parcoords.ParallelAxes(limits)
-# paraxes.plot(data)
-# paraxes.invert_axis("max_P")
-# plt.show()
-# #plot distributions of policies and robust results
+paraxes = parcoords.ParallelAxes(limits)
+paraxes.plot(data)
+#paraxes.invert_axis("max_P")
+plt.show()
+#plot distributions of policies and robust results
 
-# #sns.displot(data=robust_results)
-# #sns.pairplot(data=robust_results)
+#sns.displot(data=robust_results)
+#sns.pairplot(data=robust_results)
 
 

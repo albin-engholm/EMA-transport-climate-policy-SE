@@ -96,18 +96,18 @@ if __name__ == "__main__":
                     RealParameter("Change in fuel tax diesel",
                                   0,.12
                                   ,variable_name="C71"),
-                    RealParameter("Additional energy efficiency light vehicles",
-                                  0,.05
-                                  ,variable_name="C72"),
-                    RealParameter("Additional energy efficiency trucks",
-                                  0,.05
-                                  ,variable_name="C73"),
-                    RealParameter("Transport efficient society light vehicles",
-                                  0,.25
-                                  ,variable_name="C74"),
-                    RealParameter("Transport efficient society trucks",
-                                  0,.20
-                                  ,variable_name="C75"),
+                    # RealParameter("Additional energy efficiency light vehicles",
+                    #               0,.05
+                    #               ,variable_name="C72"),
+                    # RealParameter("Additional energy efficiency trucks",
+                    #               0,.05
+                    #               ,variable_name="C73"),
+                    # RealParameter("Transport efficient society light vehicles",
+                    #               0,.25
+                    #               ,variable_name="C74"),
+                    # RealParameter("Transport efficient society trucks",
+                    #               0,.20
+                    #               ,variable_name="C75"),
                     ]
     # specification of the outcomes
     model.outcomes = [
@@ -117,7 +117,7 @@ if __name__ == "__main__":
                       ScalarOutcome("CO2 TTW change trucks",ScalarOutcome.INFO,
                                                       variable_name="C33"),
                       
-                      ScalarOutcome("CO2 TTW change total", ScalarOutcome.MINIMIZE,
+                      ScalarOutcome("CO2 TTW change total", ScalarOutcome.INFO,
                                     variable_name="C34"),
                       
                       
@@ -140,7 +140,7 @@ if __name__ == "__main__":
                       ScalarOutcome("Energy el total",ScalarOutcome.INFO,
                                     variable_name="C40"),
                       
-                      ScalarOutcome("Energy total", ScalarOutcome.INFO,
+                      ScalarOutcome("Energy total", ScalarOutcome.MINIMIZE,
                                     variable_name="C41"),
     
     
@@ -152,13 +152,13 @@ if __name__ == "__main__":
                       ScalarOutcome("Electric share of total energy",ScalarOutcome.INFO,
                                     variable_name="C44"),
                       
-                      ScalarOutcome("Driving cost light vehicles relative reference",ScalarOutcome.INFO,
+                      ScalarOutcome("Driving cost light vehicles relative reference",ScalarOutcome.MINIMIZE,
                                     variable_name="C45"),
-                      ScalarOutcome("Driving cost trucks relative reference",ScalarOutcome.INFO,
+                      ScalarOutcome("Driving cost trucks relative reference",ScalarOutcome.MINIMIZE,
                                     variable_name="C46"),
-                      ScalarOutcome("Fossile fuel price relateive reference trucks",ScalarOutcome.INFO,
+                      ScalarOutcome("Fossile fuel price relative reference trucks",ScalarOutcome.INFO,
                                     variable_name="C52"),
-                      ScalarOutcome("Fossile fuel price relateive reference light vehicles",ScalarOutcome.INFO,
+                      ScalarOutcome("Fossile fuel price relative reference light vehicles",ScalarOutcome.INFO,
                                     variable_name="C53"),
                       
                       ScalarOutcome("Delta CS light vehicles",ScalarOutcome.INFO,
@@ -169,16 +169,16 @@ if __name__ == "__main__":
                                     variable_name="C49"),                      
                       ScalarOutcome("Delta tax income total",ScalarOutcome.INFO,
                                                       variable_name="C50"),                    
-                      ScalarOutcome("Delta CS tax",ScalarOutcome.MAXIMIZE,
+                      ScalarOutcome("Delta CS tax",ScalarOutcome.INFO,
                                                       variable_name="C51")
     
                       ]  
    #%% set reference scenario
     #reference = Scenario('reference', b=0.4, q=2, mean=0.02, stdev=0.01)
-    
+
     #%% Specify constraints
     from ema_workbench import Constraint
-    CO2_target=-.7
+    CO2_target=-.9
     bio_target=15
     # constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
     #                           function=lambda x : max(0, x-CO2_target)),
@@ -193,9 +193,9 @@ if __name__ == "__main__":
     #                 Constraint("max bio", outcome_names="Energy bio total",
     #                                           function=lambda y : max(0, y-bio_target))]
     
-    # constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
-    #                           function=lambda x : max(0, x-CO2_target))]
-    constraints=[]
+    constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
+                              function=lambda x : max(0, x-CO2_target))]
+    #constraints=[]
 #%%
     #Simulation settings
     n_p=3
@@ -210,9 +210,9 @@ if __name__ == "__main__":
 
     
     ema_logging.log_to_stderr(ema_logging.INFO)
-    convergence_metrics = [HyperVolume(minimum=[0,0,0,0], maximum=[1,1,1,1]),
+    convergence_metrics = [HyperVolume(minimum=[0]*len(model.outcomes), maximum=[1]*len(model.outcomes)),
                            EpsilonProgress()]
-    nfe=50000
+    nfe=10000
     with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
         results, convergence = evaluator.optimize(nfe=nfe, searchover='levers',
                                       epsilons=[0.01,]*len(model.outcomes),
