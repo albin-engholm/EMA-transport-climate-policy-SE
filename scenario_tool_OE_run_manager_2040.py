@@ -22,53 +22,61 @@ if __name__ == "__main__":
 
     #Set model
     model = ExcelModel("scenarioModel", wd="./models",
-                       model_file='trv_scenario_AV.xlsx')
+                       model_file='Master.xlsx')
     model.default_sheet = "EMA"
 
     #%% Specify inputs
 
     #Set parametric uncetainties
     model.uncertainties = [RealParameter("Heavy truck el share",
-                                         .02,0.5
-                                         ,variable_name="C6")
-                          ,RealParameter("Truck demand change",
-                                         -0.2,0.20,
-                                         variable_name="C4")
-                          ,RealParameter("Car el share",
-                                         0.18,0.7,
-                                         variable_name="C5")
-                          ,RealParameter("Car demand change",
-                                         -0.2,0.2
-                                         ,variable_name="C3")
-                          ,RealParameter("Fossile price adjustment",
-                                         0.8,2.5,
-                                         variable_name="C7")
-                          ,RealParameter("Biofuel price adjustment",
-                                         0.8,2.5,
-                                         variable_name="C8")
-                          ,RealParameter("Electricity price adjustment",
-                                         .5,2.5
-                                         ,variable_name="C9")
-                          # ,RealParameter("AV penetration trucks",
-                          #                0,1
-                          #                ,variable_name="C11")
-                          # ,RealParameter("Truck demand elasticity",
-                          #                -.5,-.1
-                          #                ,variable_name="D78")
-                          # ,RealParameter("Car demand elasticity",
-                          #                -.5,-.1
-                          #                ,variable_name="D80")
-                          ]
+                                          .1,0.55
+                                          ,variable_name="C6")
+                           ,RealParameter("Truck demand change",
+                                          -0.3,0.20,
+                                          variable_name="C4")
+                           ,RealParameter("Car el share",
+                                          0.35,0.9,
+                                          variable_name="C5")
+                           ,RealParameter("Car demand change",
+                                          -0.3,0.2
+                                          ,variable_name="C3")
+                           ,RealParameter("Fossile price adjustment",
+                                          0.4,1.1,
+                                          variable_name="C7")
+                           ,RealParameter("Biofuel price adjustment",
+                                          0.8,2.2,
+                                          variable_name="C8")
+                           ,RealParameter("Electricity price adjustment",
+                                          .5,2.5
+                                          ,variable_name="C9")
+                           ,RealParameter("AV penetration trucks",
+                                           0,.55
+                                           ,variable_name="C11")
+                           ,RealParameter("SAV penetration",
+                                           0,.45
+                                           ,variable_name="C13")
+                           ,RealParameter("SAV PCE",
+                                           .5,2
+                                           ,variable_name="C14"),
+                           
+                           #,RealParameter("Truck demand elasticity",
+                           #                -.5,-.1
+                           #                ,variable_name="D78")
+                           # ,RealParameter("Car demand elasticity",
+                           #                -.5,-.1
+                           #                ,variable_name="D80")
+                           ]
     #Select whether if electrification should be treated as an external uncertainty (True)
-    External_electrification_rate=False
+    External_electrification_rate=True
     if External_electrification_rate==False:         
         model.constants = [Constant("C10","No")] #Set external electrification parameter in excel to no
         model.uncertainties._data.pop("Car el share") #Remove electrification uncertainties
         model.uncertainties._data.pop("Heavy truck el share")
     else:
         model.constants = [Constant("C10", "Yes")]
-   #Set elasticity heavy vehicles 
-    model.constants = [Constant("C22", -.9)]
+   #Set constants
+    model.constants = [Constant("C22", -.9)] #Set truck price elasticity
+    model.constants = [Constant("C12", -.1)] #Set AV truck fuel efficincy
     
     #Specification of levers
     model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
@@ -78,7 +86,7 @@ if __name__ == "__main__":
                                          ["Beslutad politik","Level 1","Level 2"]
                                          ,variable_name="C63"),
                     RealParameter("Share HVO diesel",
-                                  0, 0.80,
+                                  0, 0.80, #0.8
                                   variable_name="C64"),
                     RealParameter("Share FAME diesel",
                                   0, 0.07,
@@ -168,6 +176,8 @@ if __name__ == "__main__":
                                                       variable_name="C50"),                    
                       ScalarOutcome("Delta CS tax",
                                                       variable_name="C51"),
+                      ScalarOutcome("Driving cost light vehicles",variable_name="C54"),
+                      ScalarOutcome("Driving cost trucks",variable_name="C55")
 
                       ]  
     
@@ -180,6 +190,7 @@ if __name__ == "__main__":
     policies=samplers.sample_levers(model, n_policies, sampler=samplers.LHSSampler())
         #%% manual specification of policies   
     if manual_policies: # overide the pre-sampled policies
+        # B
         policy1=(0,     #Additional energy efficiency light vehicles [%]
                  0,  #Additional energy efficiency trucks [%]
                  1,  #Bus energy consumption [0,1,2]
@@ -194,6 +205,7 @@ if __name__ == "__main__":
                  0,     #Transport efficient society trucks [% reduction]
                  0,     #km-tax light vehicles [SEK/km]
                  0)     #km-tax trucks [SEK/km]
+        #C1
         policy2=(0,     #Additional energy efficiency light vehicles [%]
                  0,  #Additional energy efficiency trucks [%]
                  2,  #Bus energy consumption [0,1,2]
@@ -208,6 +220,7 @@ if __name__ == "__main__":
                  0,     #Transport efficient society trucks [% reduction]
                  0,     #km-tax light vehicles [SEK/km]
                  0)     #km-tax trucks [SEK/km]
+        #C2
         policy3=(0,     #Additional energy efficiency light vehicles [%]
                  0,  #Additional energy efficiency trucks [%]
                  2,  #Bus energy consumption [0,1,2]
@@ -222,6 +235,7 @@ if __name__ == "__main__":
                  0,     #Transport efficient society trucks [% reduction]
                  1,     #km-tax light vehicles [SEK/km]
                  2)     #km-tax trucks [SEK/km]
+        #C3
         policy4=(0,     #Additional energy efficiency light vehicles [%]
                  0,  #Additional energy efficiency trucks [%]
                  2,  #Bus energy consumption [0,1,2]
@@ -236,6 +250,7 @@ if __name__ == "__main__":
                  0,     #Transport efficient society trucks [% reduction]
                  1,     #km-tax light vehicles [SEK/km]
                  2)     #km-tax trucks [SEK/km]
+        #C4
         policy5=(0,     #Additional energy efficiency light vehicles [%]
                  0,  #Additional energy efficiency trucks [%]
                  2,  #Bus energy consumption [0,1,2]
@@ -250,6 +265,7 @@ if __name__ == "__main__":
                  0,     #Transport efficient society trucks [% reduction]
                  0,     #km-tax light vehicles [SEK/km]
                  0)     #km-tax trucks [SEK/km]
+        #D1
         policy6=(0.05,     #Additional energy efficiency light vehicles [%]
                  0.05,  #Additional energy efficiency trucks [%]
                  2,  #Bus energy consumption [0,1,2]
@@ -264,6 +280,7 @@ if __name__ == "__main__":
                  .050,     #Transport efficient society trucks [%]
                  .50,     #km-tax light vehicles [SEK/km]
                  1)     #km-tax trucks [SEK/km]
+        #D2
         policy7=(.05,     #Additional energy efficiency light vehicles [%]
                  .05,  #Additional energy efficiency trucks [%]
                  2,  #Bus energy consumption [0,1,2]
@@ -278,10 +295,11 @@ if __name__ == "__main__":
                  .050,     #Transport efficient society trucks [% reduction]
                  .50,     #km-tax light vehicles [SEK/km]
                  1)     #km-tax trucks [SEK/km]
+        #D3
         policy8=(.05,     #Additional energy efficiency light vehicles [%]
                  .05,  #Additional energy efficiency trucks [%]
                  2,  #Bus energy consumption [0,1,2]
-                 .63,     #Change in fuel tax diesel [%/y]
+                 .063,     #Change in fuel tax diesel [%/y]
                  .063,      #Change in fuel tax gasoline [%/y]  
                  1,     #ICE CO2 reduction ambition level [0,1]
                  .07,     #Share FAME diesel [%]
@@ -320,7 +338,7 @@ if __name__ == "__main__":
                   "Reference - planned policies"]
     #%%    #Run model - for open exploration
     #Simulation settings
-    nr_scenarios=10  #select number of scenarios (per policy)
+    nr_scenarios=100  #select number of scenarios (per policy)
     run_with_policies=1
     use_multi=1
     n_p=3

@@ -9,8 +9,6 @@ Results are saved and can be loaded for analysis in separate script -
 e.g. scenario_exploration_excel_static.py'
 """
 
-
-
 from ema_workbench import (RealParameter, CategoricalParameter, 
                            ScalarOutcome, ema_logging,
                            perform_experiments, Constant)
@@ -23,44 +21,61 @@ if __name__ == "__main__":
 
     #Set model
     model = ExcelModel("scenarioModel", wd="./models",
-                       model_file='trv_scenario_AV.xlsx')
+                       model_file='Master.xlsx')
     model.default_sheet = "EMA"
 #%% specify simulation parameters
     sample_new_scenarios=False
-    n_scenarios=3 #Numbers of scenarios to generate
+    load_diverse_scenarios=False
+    n_scenarios=0#Numbers of scenarios to generate
     sampler=samplers.FullFactorialSampler()
-    n_p=2 #set # of parallel threads
-    nfe=2000 #
+    n_p=8 #set # of parallel threads
+    nfe=100 #
    #%% Specify inputs
-
-   #Set parametric uncetainties
-    model.uncertainties = [RealParameter("Heavy truck el share",
-                                         .02,0.5
+    model.uncertainties = [RealParameter("Heavy truck el share", 
+                                         .10,0.55
                                          ,variable_name="C6")
-                          ,RealParameter("Truck demand change",
-                                         -0.2,0.20,
+                          ,RealParameter("Truck demand change", 
+                                         -0.3,0.2,
                                          variable_name="C4")
-                          ,RealParameter("Car el share",
-                                         0.18,0.7,
+                          ,RealParameter("Car el share", 
+                                         0.35,0.9,
                                          variable_name="C5")
-                          ,RealParameter("Car demand change",
-                                         -0.2,0.2
+                          ,RealParameter("Car demand change", 
+                                         -0.3,0.2
                                          ,variable_name="C3")
-                          ,RealParameter("Fossile price adjustment",
-                                         0.8,1.5,
+                          ,RealParameter("Fossile price adjustment", 
+                                         0.4,1.3,
                                          variable_name="C7")
                           ,RealParameter("Biofuel price adjustment",
-                                         0.8,2.5,
+                                         0.8,2.2,
                                          variable_name="C8")
-                          ,RealParameter("Electricity price adjustment",
-                                         .5,2
+                          ,RealParameter("Electricity price adjustment",  
+                                         .5,1.5
                                          ,variable_name="C9")
-                          # ,RealParameter("Truck demand elasticity",
-                          #                -.5,-.1
-                          #                ,variable_name="D78")
-                          # ,RealParameter("Car demand elasticity",
-                          #                -.5,-.1
-                          #                ,variable_name="D80")
+                           ,RealParameter("AV penetration trucks",
+                                           0,0.55
+                                           ,variable_name="C11")
+                           ,RealParameter("AV truck change in energy use",
+                                           -.2,-.1
+                                           ,variable_name="C12")
+                           ,RealParameter("AV truck change in non-energy cost",
+                                           -.55,-.2
+                                           ,variable_name="C14")
+                           ,RealParameter("AV truck change in utilization",
+                                           0.2,0.5
+                                           ,variable_name="C13")
+                           ,RealParameter("SAV penetration",
+                                           0,.45
+                                           ,variable_name="C15")
+                           ,RealParameter("SAV VKT multiplier",
+                                           .5,2
+                                           ,variable_name="C16")
+                           ,RealParameter("SAV change in energy use",
+                                         0,0.25,
+                                         variable_name="Indata!G75")
+                           ,RealParameter("SAV change in non-energy cost",
+                                         -.1,1,
+                                         variable_name="Indata!G76")
                           ]
     #Select whether if electrification should be treated as an external uncertainty (True)
     External_electrification_rate=True
@@ -70,74 +85,72 @@ if __name__ == "__main__":
         model.uncertainties._data.pop("Heavy truck el share")
     else:
         model.constants = [Constant("C10", "Yes")]
-    
 
     # specification of the outcomes
     model.outcomes = [
                       ScalarOutcome("CO2 TTW change light vehicles", ScalarOutcome.INFO,
-                                                      variable_name="C32"), #info
+                                                      variable_name="C32"),
                       
-                      ScalarOutcome("CO2 TTW change trucks",ScalarOutcome.INFO, #info
+                      ScalarOutcome("CO2 TTW change trucks",ScalarOutcome.INFO, 
                                                       variable_name="C33"),
                       
-                      ScalarOutcome("CO2 TTW change total", ScalarOutcome.MINIMIZE, #min
+                      ScalarOutcome("CO2 TTW change total", ScalarOutcome.MINIMIZE,
                                     variable_name="C34"),
                       
                       
-                      ScalarOutcome("VKT light vehicles",ScalarOutcome.INFO,#info
+                      ScalarOutcome("VKT light vehicles",ScalarOutcome.INFO,
                                     variable_name="C35"),
                       
-                      ScalarOutcome("VKT trucks",ScalarOutcome.INFO,#info
+                      ScalarOutcome("VKT trucks",ScalarOutcome.INFO,
                                     variable_name="C36"),
                       
-                      ScalarOutcome("VKT total",ScalarOutcome.INFO,#info
+                      ScalarOutcome("VKT total",ScalarOutcome.INFO,
                                     variable_name="C37"),
                       
     
-                      ScalarOutcome("Energy bio total", ScalarOutcome.MINIMIZE, #min
+                      ScalarOutcome("Energy bio total", ScalarOutcome.MINIMIZE, 
                                     variable_name="C38"),
                       
-                      ScalarOutcome("Energy fossile total", ScalarOutcome.INFO, #info
+                      ScalarOutcome("Energy fossile total", ScalarOutcome.INFO, 
                                      variable_name="C39"),
                       
                       ScalarOutcome("Energy el total",ScalarOutcome.MINIMIZE,
                                     variable_name="C40"),#min
                       
-                      ScalarOutcome("Energy total", ScalarOutcome.INFO, #info
+                      ScalarOutcome("Energy total", ScalarOutcome.INFO, 
                                     variable_name="C41"),
     
        
-                      ScalarOutcome("Electrified VKT share light vehicles",ScalarOutcome.INFO, #info
+                      ScalarOutcome("Electrified VKT share light vehicles",ScalarOutcome.INFO, 
                                     variable_name="C42"),
-                      ScalarOutcome("Electrified VKT share trucks",ScalarOutcome.INFO, #info
+                      ScalarOutcome("Electrified VKT share trucks",ScalarOutcome.INFO, 
                                     variable_name="C43"),
-                      ScalarOutcome("Electric share of total energy",ScalarOutcome.INFO, #info
+                      ScalarOutcome("Electric share of total energy",ScalarOutcome.INFO, 
                                     variable_name="C44"),
                       
-                      ScalarOutcome("Driving cost light vehicles relative reference",ScalarOutcome.MINIMIZE, #min
-                                    variable_name="C45"),
-                      ScalarOutcome("Driving cost trucks relative reference",ScalarOutcome.MINIMIZE, #min
-                                    variable_name="C46"), 
-                      ScalarOutcome("Fossile fuel price relative reference trucks",ScalarOutcome.INFO, #info
+                      ScalarOutcome("Driving cost light vehicles",ScalarOutcome.MINIMIZE, 
+                                    variable_name="C54"),
+                      ScalarOutcome("Driving cost trucks",ScalarOutcome.MINIMIZE, 
+                                    variable_name="C55"), 
+                      ScalarOutcome("Fossile fuel price relative reference trucks",ScalarOutcome.INFO, 
                                     variable_name="C52"),
-                      ScalarOutcome("Fossile fuel price relative reference light vehicles",ScalarOutcome.INFO, #info
+                      ScalarOutcome("Fossile fuel price relative reference light vehicles",ScalarOutcome.INFO, 
                                     variable_name="C53"),
                       
-                      ScalarOutcome("Delta CS light vehicles",ScalarOutcome.MAXIMIZE, 
+                      ScalarOutcome("Delta CS light vehicles",ScalarOutcome.INFO, 
                                                       variable_name="C47"),
-                      ScalarOutcome("Delta CS trucks",ScalarOutcome.MAXIMIZE, 
+                      ScalarOutcome("Delta CS trucks",ScalarOutcome.INFO, 
                                                       variable_name="C48"),#
                       ScalarOutcome("Delta CS total", ScalarOutcome.INFO, #
                                     variable_name="C49"),                      
-                      ScalarOutcome("Delta tax income total",ScalarOutcome.MAXIMIZE, 
-                                                      variable_name="C50"),        #max            
+                      ScalarOutcome("Delta tax income total",ScalarOutcome.INFO, 
+                                                      variable_name="C50"),                   
                       ScalarOutcome("Delta CS tax",ScalarOutcome.INFO, 
-                                                      variable_name="C51")#info
-    
+                                                      variable_name="C51")
                       ]
-
    #%% Create scenarios to sample over
     from ema_workbench import Scenario
+    import pandas as pd
     if sample_new_scenarios:
         def Extract(lst,i):
             return [item[i] for item in lst]
@@ -145,7 +158,6 @@ if __name__ == "__main__":
         #Set sampling paramters
         n_uncertainties=len(model.uncertainties.keys())
         
-    
         scenarios=samplers.sample_uncertainties(model, n_scenarios, sampler=sampler)
         scenarios_dict=dict.fromkeys(scenarios.params)
         #create a dict with all scenario parameters based on scnearios
@@ -163,37 +175,71 @@ if __name__ == "__main__":
             for key in scenario_dict.keys():  
                 scenario_dict[str(key)]=scenarios_dict[str(key)][j]
             scenario_list.append(scenario_dict)
-        import pandas as pd
         df_scenarios=pd.DataFrame.from_dict(scenarios_dict)
-    else:
+    elif load_diverse_scenarios:
         import pickle
         df_scenarios=pickle.load( open("./output_data/diverse_scenarios_3.p", "rb" ) )
         scenario_list=[]    
         for i,row in df_scenarios.iterrows():
             scenario_list.append(row.to_dict())
-
-        import pandas as pd
         
-    #%% add worst case and best case scenario
-
-    worst_case={"Biofuel price adjustment":model.uncertainties["Biofuel price adjustment"].upper_bound,
+    #%% Definition of scenarios
+    if n_scenarios==0:
+        scenario_list=[]
+    worst_case={
+        "AV penetration trucks": model.uncertainties["AV penetration trucks"].upper_bound,
+        "AV truck change in energy use": model.uncertainties["AV truck change in energy use"].upper_bound,
+        "AV truck change in non-energy cost": model.uncertainties["AV truck change in non-energy cost"].lower_bound,
+        "AV truck change in utilization": model.uncertainties["AV truck change in utilization"].upper_bound,
+        "Biofuel price adjustment":model.uncertainties["Biofuel price adjustment"].upper_bound,
         "Car demand change":model.uncertainties["Car demand change"].upper_bound,
         "Car el share":model.uncertainties["Car el share"].lower_bound,
         "Electricity price adjustment":model.uncertainties["Electricity price adjustment"].upper_bound,
         "Fossile price adjustment":model.uncertainties["Fossile price adjustment"].lower_bound,
         "Heavy truck el share": model.uncertainties["Heavy truck el share"].lower_bound,
-        "Truck demand change": model.uncertainties["Truck demand change"].upper_bound}
-    
-    best_case={"Biofuel price adjustment":model.uncertainties["Biofuel price adjustment"].lower_bound,
+        "SAV change in energy use": model.uncertainties["SAV change in energy use"].lower_bound,
+        "SAV change in non-energy cost": model.uncertainties["SAV change in non-energy cost"].lower_bound,
+        "SAV penetration": model.uncertainties["SAV penetration"].upper_bound,
+        "SAV VKT multiplier": model.uncertainties["SAV VKT multiplier"].upper_bound,
+        "Truck demand change": model.uncertainties["Truck demand change"].upper_bound,
+        }   
+    best_case={
+        "AV penetration trucks": 0,
+        "AV truck change in energy use": 0,
+        "AV truck change in non-energy cost": 0,
+        "AV truck change in utilization": 0,
+        "Biofuel price adjustment":model.uncertainties["Biofuel price adjustment"].lower_bound,
         "Car demand change":model.uncertainties["Car demand change"].lower_bound,
         "Car el share":model.uncertainties["Car el share"].upper_bound,
         "Electricity price adjustment":model.uncertainties["Electricity price adjustment"].lower_bound,
         "Fossile price adjustment":model.uncertainties["Fossile price adjustment"].upper_bound,
         "Heavy truck el share": model.uncertainties["Heavy truck el share"].upper_bound,
-        "Truck demand change": model.uncertainties["Truck demand change"].lower_bound}
-    
-    scenario_list.append(best_case)
-    scenario_list.append(worst_case)
+        "SAV change in energy use": model.uncertainties["SAV change in energy use"].upper_bound,
+        "SAV change in non-energy cost": model.uncertainties["SAV change in non-energy cost"].upper_bound,
+        "SAV penetration": model.uncertainties["SAV penetration"].lower_bound,
+        "SAV VKT multiplier": model.uncertainties["SAV VKT multiplier"].lower_bound,
+        "Truck demand change": model.uncertainties["Truck demand change"].lower_bound,
+        }  
+    mid_case={
+        "AV penetration trucks":0,
+        "AV truck change in energy use":0,
+        "AV truck change in non-energy cost":0,
+        "AV truck change in utilization":0,
+        "Biofuel price adjustment":1,
+        "Car demand change":0,
+        "Car el share":.38,
+        "Electricity price adjustment":1,
+        "Fossile price adjustment":1,
+        "Heavy truck el share": .1,
+        "SAV change in energy use":0,
+        "SAV change in non-energy cost":0,
+        "SAV penetration":0,
+        "SAV VKT multiplier": 0,
+        "Truck demand change": 0
+        }
+    #scenario_list.append(best_case)
+    #scenario_list.append(worst_case)
+    scenario_list.append(mid_case)
     df_scenarios=pd.DataFrame(scenario_list)
     n_scenarios=len(scenario_list)
     #%% Specify constraints
@@ -207,7 +253,6 @@ if __name__ == "__main__":
     #                 Constraint("positive CO2",outcome_names="CO2 TTW change total",
     #                            function=lambda x : min(0,x+1))
     #                            ]
-    
     constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
                               function=lambda x : max(0, x-CO2_target)),
                     Constraint("max bio", outcome_names="Energy bio total",
@@ -216,23 +261,16 @@ if __name__ == "__main__":
     constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
                               function=lambda x : max(0, x-CO2_target))]
     constraints=[]
-#%%
-    #Simulation settings
-
-    
-    #Run
+#%%#Simulation settings and RUN
     import time
     tic=time.perf_counter()
     from ema_workbench import MultiprocessingEvaluator, ema_logging
     import matplotlib.pyplot as plt
     from ema_workbench.em_framework.optimization import (HyperVolume,
-                                                         EpsilonProgress)
-
-    
+                                                        EpsilonProgress)
     ema_logging.log_to_stderr(ema_logging.INFO)
-    convergence_metrics = [HyperVolume(minimum=[0,0,0,0,0,0,0,0], maximum=[1,1,1,1,1,1,1,1]),
-                           EpsilonProgress()]
-
+    # convergence_metrics = [HyperVolume(minimum=[0,0,0,0,0,0,0,0], maximum=[1,1,1,1,1,1,1,1]),
+    #                        EpsilonProgress()]
     scenario_count=0
     policy_types=["B","C","D"]
     for policy_type in policy_types:
@@ -243,9 +281,7 @@ if __name__ == "__main__":
         print ("Policy type ",policy_type)
         if policy_type=="B":
     #Specification of levers
-            model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
-                                                 ["1. Beslutad politik","2 Mer ambitios politik"]
-                                                 ,variable_name="C62"),
+            model.levers = [
                             CategoricalParameter("Bus energy consumption",
                                                  ["Beslutad politik","Level 1","Level 2"]
                                                  ,variable_name="C63"),
@@ -261,12 +297,9 @@ if __name__ == "__main__":
                             RealParameter("Share ethanol gasoline", 
                                           0, 0.1,
                                           variable_name="C67")
-                    ]
-            
+                    ]            
         if policy_type=="C":
-            model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
-                                                 ["1. Beslutad politik","2 Mer ambitios politik"]
-                                                 ,variable_name="C62"),
+            model.levers = [
                             CategoricalParameter("Bus energy consumption",
                                                  ["Beslutad politik","Level 1","Level 2"]
                                                  ,variable_name="C63"),
@@ -295,7 +328,6 @@ if __name__ == "__main__":
                                           0,.12
                                           ,variable_name="C71")
                     ]
-
         if policy_type=="D":
             model.levers = [CategoricalParameter("ICE CO2 reduction ambition level",
                                                  ["1. Beslutad politik","2 Mer ambitios politik"]
@@ -340,14 +372,15 @@ if __name__ == "__main__":
                                           0,.20
                                           ,variable_name="C75"),
                     ]
-        #print(model.levers.keys())
         for scenario in scenario_list:
             print("Scenario: ",scenario_count)
             reference = Scenario()
             reference.data=scenario
+            convergence_metrics = [
+                                   EpsilonProgress()]
             with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
                 results, convergence = evaluator.optimize(nfe=nfe, searchover='levers',
-                                              epsilons=[0.01]*8,
+                                              epsilons=[0.01]*5,
                                               convergence=convergence_metrics,
                                               constraints=constraints,reference=reference
                                               )
@@ -357,37 +390,23 @@ if __name__ == "__main__":
             fig, (ax1, ax2) = plt.subplots(ncols=2, sharex=True, figsize=(8,4))
             ax1.plot(convergence.nfe, convergence.epsilon_progress)
             ax1.set_ylabel('$\epsilon$-progress')
-            ax2.plot(convergence.nfe, convergence.hypervolume)
-            ax2.set_ylabel('hypervolume')
+            # ax2.plot(convergence.nfe, convergence.hypervolume)
+            # ax2.set_ylabel('hypervolume')
             
             ax1.set_xlabel('number of function evaluations')
-            ax2.set_xlabel('number of function evaluations')
-            plt.show()
-            
-        # results = []
-        # with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
-        # # we run 5 seperate optimizations
-        #     for _ in range(1):
-        #         result = evaluator.optimize(
-        #             nfe=100, searchover="levers", epsilons=[0.05] * len(model.outcomes),
-        #             constraints=constraints,convergence=convergence_metrics,
-        #         )
-        #         results.append(result)
-            
-    
+            # ax2.set_xlabel('number of function evaluations')
+
         toc=time.perf_counter()
         print("Runtime [s]= " +str(toc-tic))
         print("Runtime [h]= " +str(round((toc-tic)/3600,1)))
     
-    #%%
-              # Save results?
+    #%% Save results?
         save_results=1
         if save_results==1:
             from datetime import date    
             from ema_workbench import save_results
             filename=str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
             filename1=policy_type+filename+'.p'
-            
             import pickle
             pickle.dump([results_list,convergence_list,df_scenarios],open("./output_data/"+filename1,"wb"))
             filename2=policy_type+filename+'model_'+".p"

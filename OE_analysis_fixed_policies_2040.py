@@ -42,8 +42,8 @@ sns.set_palette(sns.color_palette(colors_policy))
 #%% Load data
 #Should previously saved result data be loaded? If not, data from workspace is used
 n_policies=9
-n_scenarios=5000
-date='2023-02-21'
+n_scenarios=100
+date='2023-04-12'
 load_results=1
 if load_results==1:
     from ema_workbench import load_results
@@ -184,12 +184,26 @@ plt.title("Feature scoring, levers, no policy")
 
 # Feature scoring on CO2 outcomes only 
 outcomes_CO2=df_outcomes[["CO2 TTW change total","CO2 TTW change trucks", "CO2 TTW change light vehicles"]].to_dict(orient="list")
+outcomes_VKT=df_outcomes[["VKT total","VKT light vehicles","VKT trucks"]].to_dict(orient="list")
+outcomes_cost=df_outcomes[["Driving cost light vehicles","Driving cost trucks"]].to_dict(orient="list")
+
 fs = feature_scoring.get_feature_scores_all(experiments, outcomes_CO2)
 plt.figure()
 fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
 plt.title("Feature scoring, all parameters")
 
+
 fs = feature_scoring.get_feature_scores_all(experiments.drop(columns=model.levers._data.keys()), outcomes_CO2)
+plt.figure()
+fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
+plt.title("Feature scoring, no individual levers")
+
+fs = feature_scoring.get_feature_scores_all(experiments.drop(columns=model.levers._data.keys()), outcomes_VKT)
+plt.figure()
+fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
+plt.title("Feature scoring, no individual levers")
+
+fs = feature_scoring.get_feature_scores_all(experiments.drop(columns=model.levers._data.keys()), outcomes_cost)
 plt.figure()
 fig=sns.heatmap(fs, cmap='viridis', annot=True,fmt=".2f")
 plt.title("Feature scoring, no individual levers")
@@ -230,7 +244,7 @@ for j in range(len(y_CO2)):
 #choose criterion to use y
 y_atleastonefail=np.array(y_atleastonefail,dtype=bool)
 y_allfail=np.array(y_allfail,dtype=bool)
-y=y_atleastonefail
+y=y_CO2
 df_full["CO2 target not met"]=y_CO2
 df_full["Bio target not met"]=y_bio
 df_full["Light vehicle cost target not met"]=y_light_cost
@@ -357,6 +371,12 @@ plt.show()
 sns.scatterplot(y='Delta tax income total', x='Energy bio total', 
               data=df_full, hue="policy",  alpha=0.5)
 plt.show()
+plt.figure()
+sns.scatterplot(data=df_full,x="SAV penetration",y="VKT light vehicles",hue="policy")
+plt.figure()
+sns.scatterplot(data=df_full,x="SAV penetration",y="VKT light vehicles")
+plt.figure()
+sns.scatterplot(data=df_full,x="AV penetration trucks",y="VKT trucks",hue="policy")
 #%% Distribution and box plot of policies
 #Plot hist/KDE on CO2 criterion
 sns.set_palette(sns.color_palette(colors_policy))
@@ -590,14 +610,14 @@ dimensional_stacking.create_pivot_plot(x,y, 2, nbins=4)
 plt.show()
 #%% Regional sensitivty analysis, 
 # model is the same across experiments
-sns.color_palette()
+sns.set_palette("hls")
 from ema_workbench.analysis import regional_sa
 sns.set_style('white')
 x_copy = experiments.copy()
-x_copy = x_copy.drop('model', axis=1)
+x_copy = x_copy.drop(["policy",'model'], axis=1)
 #x_copy = x_copy.drop('policy', axis=1)
 fig = regional_sa.plot_cdfs(x_copy,y,ccdf=False)
-sns.color_palette()
+sns.set_palette("hls")
 sns.despine()
 plt.show()
 
