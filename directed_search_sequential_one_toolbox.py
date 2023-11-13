@@ -4,7 +4,7 @@ Created on Mon Mar 28 11:11:08 2022
 
 @author: aengholm
 This is a script for setting up and running directed search over policy levers for a static 
-excel model with parametric uncertainties. It is designed for the TRV scenario model.
+excel model with parametric uncertaintie. It is designed for the TRV scenario model.
 Results are saved and can be loaded for analysis in separate script - 
 e.g. scenario_exploration_excel_static.py'
 """
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     n_scenarios=0#Numbers of scenarios to generate
     sampler=samplers.FullFactorialSampler()
     n_p=8 #set # of parallel threads
-    nfe=500000 #
+    nfe=50000 #
    #%% Specify inputs
     model.uncertainties = [
                            RealParameter("X1_car_demand", 
@@ -80,6 +80,7 @@ if __name__ == "__main__":
                            ,RealParameter("X15_VKT_per_driverless_truck",
                                            0.2,0.5
                                            ,variable_name="C13")
+
                           ]
     #Select whether if electrification should be treated as an external uncertainty (True)
     External_electrification_rate=True
@@ -89,12 +90,73 @@ if __name__ == "__main__":
         model.uncertainties._data.pop("X7_truck_electrification_rate")
     else:
         model.constants = [Constant("C10", "Yes")]
-    #Set bus energy use to "Level 1" as defualt
-    model.constants = [Constant("C63", "Level 1")]
 
+    # specification of the outcomes
+    # model.outcomes = [
+    #                   ScalarOutcome("CO2 TTW change light vehicles", ScalarOutcome.INFO,
+    #                                                   variable_name="C32"),
+                      
+    #                   ScalarOutcome("CO2 TTW change trucks",ScalarOutcome.INFO, 
+    #                                                   variable_name="C33"),
+                      
+    #                   ScalarOutcome("CO2 TTW change total", ScalarOutcome.MINIMIZE,
+    #                                 variable_name="C34"),
+                      
+                      
+    #                   ScalarOutcome("VKT light vehicles",ScalarOutcome.INFO,
+    #                                 variable_name="C35"),
+                      
+    #                   ScalarOutcome("VKT trucks",ScalarOutcome.INFO,
+    #                                 variable_name="C36"),
+                      
+    #                   ScalarOutcome("VKT total",ScalarOutcome.INFO,
+    #                                 variable_name="C37"),
+                      
+    
+    #                   ScalarOutcome("Energy bio total", ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C38"),
+                      
+    #                   ScalarOutcome("Energy fossile total", ScalarOutcome.INFO, 
+    #                                   variable_name="C39"),
+                      
+    #                   ScalarOutcome("Energy el total",ScalarOutcome.MINIMIZE,
+    #                                 variable_name="C40"),#min
+                      
+    #                   ScalarOutcome("Energy total", ScalarOutcome.INFO, 
+    #                                 variable_name="C41"),
+    
+       
+    #                   ScalarOutcome("Electrified VKT share light vehicles",ScalarOutcome.INFO, 
+    #                                 variable_name="C42"),
+    #                   ScalarOutcome("Electrified VKT share trucks",ScalarOutcome.INFO, 
+    #                                 variable_name="C43"),
+    #                   ScalarOutcome("Electric share of total energy",ScalarOutcome.INFO, 
+    #                                 variable_name="C44"),
+                      
+    #                   ScalarOutcome("Driving cost light vehicles",ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C54"),
+    #                   ScalarOutcome("Driving cost trucks",ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C55"), 
+    #                   ScalarOutcome("Fossile fuel price relative reference trucks",ScalarOutcome.INFO, 
+    #                                 variable_name="C52"),
+    #                   ScalarOutcome("Fossile fuel price relative reference light vehicles",ScalarOutcome.INFO, 
+    #                                 variable_name="C53"),
+                      
+    #                   ScalarOutcome("Delta CS light vehicles",ScalarOutcome.INFO, 
+    #                                                   variable_name="C47"),
+    #                   ScalarOutcome("Delta CS trucks",ScalarOutcome.INFO, 
+    #                                                   variable_name="C48"),#
+    #                   ScalarOutcome("Delta CS total", ScalarOutcome.INFO, #
+    #                                 variable_name="C49"),                      
+    #                   ScalarOutcome("Delta tax income total",ScalarOutcome.INFO, 
+    #                                                   variable_name="C50"),                   
+    #                   ScalarOutcome("Delta CS tax",ScalarOutcome.INFO, 
+    #                                                   variable_name="C51")
+    #                   ]
+    
     model.outcomes = [
-                      ScalarOutcome("M1_CO2_TTW_total", ScalarOutcome.MINIMIZE,
-                                    variable_name="C58"),
+                      ScalarOutcome("M1_CO2_TTW_change_total", ScalarOutcome.MINIMIZE,
+                                    variable_name="C34"),
 
                       ScalarOutcome("M2_driving_cost_car",ScalarOutcome.MINIMIZE, 
                                     variable_name="C54"),
@@ -117,7 +179,7 @@ if __name__ == "__main__":
         
         #Set sampling paramters
         n_uncertainties=len(model.uncertainties.keys())
-        
+        sampler=samplers.LHSSampler()
         scenarios=samplers.sample_uncertainties(model, n_scenarios, sampler=sampler)
         scenarios_dict=dict.fromkeys(scenarios.params)
         #create a dict with all scenario parameters based on scnearios
@@ -141,8 +203,7 @@ if __name__ == "__main__":
         df_scenarios=pickle.load( open("./output_data/diverse_scenarios_3.p", "rb" ) )
         scenario_list=[]    
         for i,row in df_scenarios.iterrows():
-            scenario_list.append(row.to_dict())
-        
+            scenario_list.append(row.to_dict())       
     #%% Definition of scenarios
     if n_scenarios==0:
         scenario_list=[]
@@ -164,6 +225,8 @@ if __name__ == "__main__":
         "X15_VKT_per_driverless_truck": model.uncertainties["X15_VKT_per_driverless_truck"].upper_bound
     }
 
+    
+    
     best_case = {
         "X1_car_demand": model.uncertainties["X1_car_demand"].lower_bound,
         "X2_truck_demand": model.uncertainties["X2_truck_demand"].lower_bound,
@@ -182,14 +245,14 @@ if __name__ == "__main__":
         "X15_VKT_per_driverless_truck": model.uncertainties["X15_VKT_per_driverless_truck"].upper_bound
     }
 
-    mid_case = { #This is the reference scenario
+    mid_case = {
         "X1_car_demand": 0,
         "X2_truck_demand": 0,
         "X3_fossil_fuel_price": 1,
         "X4_bio_fuel_price": 1,
         "X5_electricity_price": 1,
-        "X6_car_electrification_rate": .68,
-        "X7_truck_electrification_rate": .30,
+        "X6_car_electrification_rate": .38,
+        "X7_truck_electrification_rate": .1,
         "X8_SAV_market_share": 0,
         "X9_SAV_driving_cost": 0,
         "X10_SAV_energy_efficiency": 0,
@@ -199,14 +262,16 @@ if __name__ == "__main__":
         "X14_driverless_truck_energy_efficiency": 0,
         "X15_VKT_per_driverless_truck": 0
     }
-    #scenario_list.append(best_case)
-    #scenario_list.append(worst_case)
+
+
+    scenario_list.append(best_case)
+    scenario_list.append(worst_case)
     scenario_list.append(mid_case)
     df_scenarios=pd.DataFrame(scenario_list)
     n_scenarios=len(scenario_list)
     #%% Specify constraints
     from ema_workbench import Constraint
-    CO2_target = 0.1*18.9 #2040 target is 10% of 2010 emission levels
+    CO2_target=-.9
     bio_target=15
     # constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
     #                           function=lambda x : max(0, x-CO2_target)),
@@ -215,172 +280,204 @@ if __name__ == "__main__":
     #                 Constraint("positive CO2",outcome_names="CO2 TTW change total",
     #                            function=lambda x : min(0,x+1))
     #                            ]
-    # constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
-    #                           function=lambda x : max(0, x-CO2_target)),
-    #                 Constraint("max bio", outcome_names="Energy bio total",
-    #                                           function=lambda y : max(0, y-bio_target))]
+    constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
+                              function=lambda x : max(0, x-CO2_target)),
+                    Constraint("max bio", outcome_names="Energy bio total",
+                                              function=lambda y : max(0, y-bio_target))]
     
-    constraints = [Constraint("max CO2", outcome_names="M1_CO2_TTW_total",
+    constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
                               function=lambda x : max(0, x-CO2_target))]
-    #constraints=[]
+    constraints=[]
 #%%#Simulation settings and RUN
     import time
     tic=time.perf_counter()
     from ema_workbench import MultiprocessingEvaluator, ema_logging
     import matplotlib.pyplot as plt
-    from ema_workbench.em_framework.optimization import (HyperVolume,
-                                                        EpsilonProgress)
     from ema_workbench.em_framework.optimization import (HypervolumeMetric,
                                                         EpsilonProgress,
                                                         ArchiveLogger,epsilon_nondominated)
     ema_logging.log_to_stderr(ema_logging.INFO)
-    # convergence_metrics = [HyperVolume(minimum=[0,0,0,0,0,0,0,0], maximum=[1,1,1,1,1,1,1,1]),
-    #                        EpsilonProgress()]
+
     scenario_count=0
-    #policy_types=["All levers", "No transport efficient society"]
-    #policy_types=["No transport efficient society"]#,    
-    policy_types=["All levers"]
-    
-    for policy_type in policy_types:
-        results_list=[]
-        convergence_list=[]
-        print("Estimated total runs: ",len(policy_types*nfe*len(df_scenarios)))
-        scenario_count=0
-        print ("Policy type ",policy_type)
-        if policy_type=="All levers":
-    #Specification of levers
-            model.levers.clear()
-            model.levers = [
-        
-                            RealParameter("L1_bio_share_diesel",
-                                          0, 1,
-                                          variable_name="C76"),
-                            RealParameter("L2_bio_share_gasoline",
-                                          0, 1,
-                                          variable_name="C77"),
-                            RealParameter("L3_additional_car_energy_efficiency",
-                                          0.0499,.05
-                                          ,variable_name="C72"),
-                            RealParameter("L4_additional_truck_energy_efficiency",
-                                          0.0499,.05
-                                          ,variable_name="C73"),
-                            RealParameter("L5_fuel_tax_increase_gasoline",
-                                          0,.12
-                                          ,variable_name="C70"),
-                            RealParameter("L6_fuel_tax_increase_diesel",
-                                          0,.12
-                                          ,variable_name="C71"),
-                            RealParameter("L7_km_tax_cars",
-                                          0,2
-                                          ,variable_name="C68"),
-                            RealParameter("L8_km_tax_trucks",
-                                          0,3
-                                          ,variable_name="C69"),
-                            RealParameter("L9_transport_efficient_planning_cars",
-                                          .2499,.25
-                                          ,variable_name="C74"),
-                            RealParameter("L10_transport_efficient_planning_trucks",
-                                          .2499,.25
-                                          ,variable_name="C75")
-                    ]
-            
-        if policy_type=="No transport efficient society":
-            model.levers.clear()
-            model.levers = [
-        
-                            RealParameter("L1_bio_share_diesel",
-                                          0, 1,
-                                          variable_name="C76"),
-                            RealParameter("L2_bio_share_gasoline",
-                                          0, 1,
-                                          variable_name="C77"),
-                            RealParameter("L3_additional_car_energy_efficiency",
-                                          0,.05
-                                          ,variable_name="C72"),
-                            RealParameter("L4_additional_truck_energy_efficiency",
-                                          0,.05
-                                          ,variable_name="C73"),
-                            RealParameter("L5_fuel_tax_increase_gasoline",
-                                          0,.12
-                                          ,variable_name="C70"),
-                            RealParameter("L6_fuel_tax_increase_diesel",
-                                          0,.12
-                                          ,variable_name="C71"),
-                            RealParameter("L7_km_tax_cars",
-                                          0,2
-                                          ,variable_name="C68"),
-                            RealParameter("L8_km_tax_trucks",
-                                          0,3
-                                          ,variable_name="C69"),
-                            RealParameter("L9_transport_efficient_planning_cars",
-                                          0,.001
-                                          ,variable_name="C74"),
-                            RealParameter("L10_transport_efficient_planning_trucks",
-                                          0,.001
-                                          ,variable_name="C75")
-                    ]
-            
-        for scenario in scenario_list:
-            print("Scenario: ",scenario_count)
-            reference = Scenario()
-            reference.data=scenario
-            
-            convergence_metrics = [
-                ArchiveLogger(
-                    "./archives",
-                    [l.name for l in model.levers],
-                    [o.name for o in model.outcomes],
-                    base_filename=f"{policy_type}.tar.gz",
-                ),
-                EpsilonProgress(),
+    results_list=[]
+    convergence_list=[]
+    print("Estimated total runs: ",nfe*len(df_scenarios))
+    scenario_count=0
+    model.levers = [
+
+                    RealParameter("L1_HVO_share_diesel",
+                                  0, 0.80,
+                                  variable_name="C64"),
+                    RealParameter("L2_FAME_share_diesel",
+                                  0, 0.07,
+                                  variable_name="C65"),
+                    RealParameter("L3_HVO_share_gasoline", 
+                                  0, 0.7,
+                                  variable_name="C66"),
+                    RealParameter("L4_ethanol_share_gasoline", 
+                                  0, 0.1,
+                                  variable_name="C67"),
+                    RealParameter("L5_additional_car_energy_efficiency",
+                                  0,.05
+                                  ,variable_name="C72"),
+                    RealParameter("L6_additional_truck_energy_efficiency",
+                                  0,.05
+                                  ,variable_name="C73"),
+                    CategoricalParameter("L7_bus_energy_efficiency",
+                                         ["Beslutad politik","Level 1","Level 2"]
+                                         ,variable_name="C63"),
+                    RealParameter("L8_fuel_tax_increase_gasoline",
+                                  0,.12
+                                  ,variable_name="C70"),
+                    RealParameter("L9_fuel_tax_increase_diesel",
+                                  0,.12
+                                  ,variable_name="C71"),
+                    RealParameter("L10_km_tax_cars",
+                                  0,2
+                                  ,variable_name="C68"),
+                    RealParameter("L11_km_tax_trucks",
+                                  0,3
+                                  ,variable_name="C69"),
+
+                    RealParameter("L12_transport_efficient_planning_cars",
+                                  0,.25
+                                  ,variable_name="C74"),
+                    RealParameter("L13_transport_efficient_planning_trucks",
+                                  0,.25
+                                  ,variable_name="C75"),
             ]
-            # convergence_metrics = [
-            #                        EpsilonProgress()]
-            epsilons = [0.2, .5, 2.5, 0.2, 0.2] #Epsilons for M1-M5
-            
-            # Create instances of the crossover and mutation operators
-            from platypus import SBX, PM, GAOperator
-            crossover = SBX(probability=1, distribution_index=20)
-            #mutation = PM(probability= 1/ len(model.levers.keys()), distribution_index=20)
-            mutation = PM(probability= 1, distribution_index=20)
-            # Create an instance of GAOperator with the operators
-            variator_instance = GAOperator(crossover, mutation)
-            
-            with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
-                results, convergence = evaluator.optimize(nfe=nfe, searchover='levers',
-                                              epsilons=epsilons,
-                                              convergence=convergence_metrics,
-                                              constraints=constraints,
-                                              reference=reference,
-                                              population_size=100,
-                                              variator=variator_instance
-                                              )
-                            
-            scenario_count=scenario_count+1
-            
-            #plot epsilon progress
-            fig, (ax1, ax2) = plt.subplots(ncols=2, sharex=True, figsize=(8,4))
-            ax1.plot(convergence.nfe, convergence.epsilon_progress)
-            ax1.set_ylabel('$\epsilon$-progress')
-            # ax2.plot(convergence.nfe, convergence.hypervolume)
-            # ax2.set_ylabel('hypervolume')
-            ax1.set_xlabel('number of function evaluations')
-            # ax2.set_xlabel('number of function evaluations')
+    for scenario in scenario_list:
+        print("Scenario: ",scenario_count)
+        reference = Scenario()
+        reference.data=scenario
+        convergence_metrics = [
+                               EpsilonProgress()]
+        convergence_metrics = [
+            ArchiveLogger(
+                "./archives",
+                [l.name for l in model.levers],
+                [o.name for o in model.outcomes],
+                base_filename=f"{scenario_count}.tar.gz",
+            ),
+            EpsilonProgress(),
+        ]
+        epsilons=[0.01]*5
+        with MultiprocessingEvaluator(msis=model,n_processes=n_p) as evaluator:
+            results, convergence = evaluator.optimize(nfe=nfe,
+                                          searchover='levers',
+                                          epsilons=epsilons,
+                                          convergence=convergence_metrics,
+                                          constraints=constraints,
+                                          reference=reference
+                                          )
         results_list.append(results)
         convergence_list.append(convergence)
-
-        toc=time.perf_counter()
-        print("Runtime [s]= " +str(toc-tic))
-        print("Runtime [h]= " +str(round((toc-tic)/3600,1)))
-    
-     #Save results?
+        scenario_count=scenario_count+1
+        
+    # Save results?
         save_results=1
         if save_results==1:
             from datetime import date    
             from ema_workbench import save_results
-            filename=str(nfe)+'_nfe_directed_search_MORDM_'+str(date.today())
-            filename1=policy_type+filename+'.p'
+            filename=str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
+            filename1=filename+'.p'
             import pickle
-            pickle.dump([results_list,convergence_list,df_scenarios,epsilons],open("./output_data/"+filename1,"wb"))
-            filename2=policy_type+filename+'model_'+".p"
+            pickle.dump([results_list,convergence_list,df_scenarios],open("./output_data/"+filename1,"wb"))
+            filename2=filename+'model_'+".p"
             pickle.dump(model,open("./output_data/"+filename2,"wb"))
+       #%% Compute and visualize convergence metrics
+    all_archives = []
+    
+    for i in range(scenario_count):
+        archives = ArchiveLogger.load_archives(f"./archives/{i}.tar.gz")
+        all_archives.append(archives)    
+
+    from ema_workbench import (
+        HypervolumeMetric,
+        GenerationalDistanceMetric,
+        EpsilonIndicatorMetric,
+        InvertedGenerationalDistanceMetric,
+        SpacingMetric,
+    )
+    from ema_workbench.em_framework.optimization import to_problem
+    
+    problem = to_problem(model, searchover="levers")
+    
+
+
+# Create a new DataFrame from the modified rows
+    results_epsilon=[results]
+    reference_set = epsilon_nondominated((results_epsilon), epsilons, problem)
+
+    # hv = HypervolumeMetric(reference_set, problem)
+    gd = GenerationalDistanceMetric(reference_set, problem, d=1)
+    ei = EpsilonIndicatorMetric(reference_set, problem)
+    ig = InvertedGenerationalDistanceMetric(reference_set, problem, d=1)
+    sm = SpacingMetric(problem)
+    
+    
+    metrics_by_seed = []
+    for archives in all_archives:
+        metrics = []
+        for nfe, archive in archives.items():
+            scores = {
+                "generational_distance": gd.calculate(archive),
+                # "hypervolume": hv.calculate(archive),
+                "epsilon_indicator": ei.calculate(archive),
+                "inverted_gd": ig.calculate(archive),
+                "spacing": sm.calculate(archive),
+                "nfe": int(nfe),
+            }
+            metrics.append(scores)
+        metrics = pd.DataFrame.from_dict(metrics)
+    
+        # sort metrics by number of function evaluations
+        metrics.sort_values(by="nfe", inplace=True)
+        metrics_by_seed.append(metrics)
+    import seaborn as sns
+    sns.set_style("white")
+    fig, axes = plt.subplots(nrows=6, figsize=(8, 12), sharex=True)
+    
+    ax1, ax2, ax3, ax4, ax5, ax6 = axes
+    
+    for metrics, convergence in zip(metrics_by_seed, convergence_list):
+        # ax1.plot(metrics.nfe, metrics.hypervolume)
+        # ax1.set_ylabel("hypervolume")
+    
+        ax2.plot(convergence.nfe, convergence.epsilon_progress)
+        ax2.set_ylabel("$\epsilon$ progress")
+    
+        ax3.plot(metrics.nfe, metrics.generational_distance)
+        ax3.set_ylabel("generational distance")
+    
+        ax4.plot(metrics.nfe, metrics.epsilon_indicator)
+        ax4.set_ylabel("epsilon indicator")
+    
+        ax5.plot(metrics.nfe, metrics.inverted_gd)
+        ax5.set_ylabel("inverted generational\ndistance")
+    
+        ax6.plot(metrics.nfe, metrics.spacing)
+        ax6.set_ylabel("spacing")
+    
+    ax6.set_xlabel("nfe")
+    
+    
+    sns.despine(fig)
+    
+    plt.show()
+    
+    #%% Old visualization
+    fig, (ax1, ax2) = plt.subplots(ncols=2, sharex=True, figsize=(8,4))
+    ax1.plot(convergence.nfe, convergence.epsilon_progress)
+    ax1.set_ylabel('$\epsilon$-progress')
+    # ax2.plot(convergence.nfe, convergence.hypervolume)
+    # ax2.set_ylabel('hypervolume')
+    
+    ax1.set_xlabel('number of function evaluations')
+    # ax2.set_xlabel('number of function evaluations')
+
+    toc=time.perf_counter()
+    print("Runtime [s]= " +str(toc-tic))
+    print("Runtime [h]= " +str(round((toc-tic)/3600,1)))
+
+

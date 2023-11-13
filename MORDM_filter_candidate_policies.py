@@ -375,15 +375,15 @@ if __name__ == "__main__":
     #%%
     # Step 2: Plot parallel coordinates
     
-    paraxes = parcoords.ParallelAxes(limits_outcomes, fontsize=24,rot=0)
+    paraxes = parcoords.ParallelAxes(limits_outcomes,formatter={"maxima":".1f","minima":".1f"},fontsize=20,rot=0)
     
     # Non-selected policies in gray
-    paraxes.plot(df_full[df_full.index.isin(df_candidate_policies.index) == False], color='lightgray')
+    #paraxes.plot(df_full[df_full.index.isin(df_candidate_policies.index) == False], color='white',linewidth=0.1,alpha=0.5)
     
     # Create a colormap for unique policy types using viridis
     n_unique_policies = len(df_candidate_policies['Policy type'].unique())
     # Manually specify colors: Dark Plum and Dark Gold
-    colors = ["#8E4585", "#AF9500"]
+    colors = ["#E9C2C0", "#610100"]
 
     # Plot selected policies with the manually specified colors
     for idx, policy_type in enumerate(df_candidate_policies['Policy type'].unique()):
@@ -392,7 +392,9 @@ if __name__ == "__main__":
     
     # Get the figure that parcoords is using
     parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
-    
+    # for ax in paraxes.axes:
+    #     ax.set_xticklabels([])  # This removes the x-axis tick labels
+    #     ax.set_yticklabels([])  #
     # Set figure size and facecolor
     parcoords_fig.set_size_inches(15, 10)
     parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
@@ -400,15 +402,11 @@ if __name__ == "__main__":
     # Optionally, you can add a legend if you need it
     # paraxes.legend()
 
-
     # Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
     parcoords_fig.savefig("parallel_coordinates_plot_transparent_viridis.png", dpi=500, format="png", bbox_inches="tight", transparent=True)
     
     # If you want to show the plot, you would now use
-    plt.show()
-
-
-     
+    plt.show()     
     #%% pairplots of all policies
     import seaborn as sns
     #pairplot_kws={"alpha":0.5,"s":1}

@@ -104,7 +104,7 @@ for policy in all_policies:
                     f"Max {outcome}": outcome_data.max(),
                     f"Mean {outcome}": outcome_data.mean(),
                     f"Standard deviation {outcome}": outcome_data.std(),
-                    f"Mean/standard_deviation {outcome}": (outcome_data.mean() + 1) * (outcome_data.std() + 1),
+                    f"Mean/stdev {outcome}": (outcome_data.mean() + 1) * (outcome_data.std() + 1),
                 })
 
                 regrets = abs( outcome_data - zero_regret_df.loc[
@@ -138,7 +138,7 @@ for outcome in outcomes_M:
         metrics = [
             f"90_percentile_deviation {outcome}", 
             f"Max_regret {outcome}", 
-            f"Mean/standard_deviation {outcome}"
+            f"Mean/stdev {outcome}"
         ]
         
         # Create the pairplot
@@ -230,7 +230,7 @@ plt.rcParams["figure.figsize"] = [16, 12]
 metrics = [
     "90_percentile_deviation", 
     "Max_regret", 
-    "Mean/standard_deviation"
+    "Mean/stdev"
 ]
 
 for metric in metrics:
@@ -309,7 +309,7 @@ outcomes = [
     'M4_energy_use_bio',
     'M5_energy_use_electricity'
 ]
-metrics = ["90_percentile_deviation", "Max_regret", "Mean/standard_deviation"]
+metrics = ["90_percentile_deviation", "Max_regret", "Mean/stdev"]
 
 # 1. Normalize the metrics for each outcome
 for metric in metrics:
@@ -334,7 +334,7 @@ for metric in metrics:
         # Determine top 5 policies for this metric and uncertainty set, for each policy type including "Trv"
         top_policies = []
         for ptype in color_coding.keys():
-            ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].nsmallest(5, 'sum_metric').index.tolist()
+            ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].nsmallest(2, 'sum_metric').index.tolist()
             top_policies.extend(ptype_policies)
 
         # Plotting
@@ -359,6 +359,103 @@ for metric in metrics:
         plt.title(f"Metric: {metric}, Uncertainty set: {uncertainty_set}")
         plt.show()
 
+plt.rcParams["figure.figsize"] = original_figsize
+#%% plot for poster
+from matplotlib.patches import Patch
+import pandas as pd
+import matplotlib.pyplot as plt
+from ema_workbench.analysis import parcoords
+
+# Define your color coding for the legend
+color_coding = {
+    "All levers": '#610100',
+    "No transport efficient society": '#E9C2C0',
+
+}
+
+# Create a dictionary for the light colors
+light_color_coding = {
+    "All levers": 'lightgrey',
+    "No transport efficient society": 'lightgrey',
+}
+
+# Save the original default size
+original_figsize = plt.rcParams["figure.figsize"]
+plt.rcParams["figure.figsize"] = [16, 12]
+
+outcomes = [
+    'M1_CO2_TTW_total',
+    'M2_driving_cost_car',
+    'M3_driving_cost_truck',
+    'M4_energy_use_bio',
+    'M5_energy_use_electricity'
+]
+metrics = ["Mean/stdev"]
+policy_metrics_df2=policy_metrics_df[(policy_metrics_df["Policy type"]=="All levers") |(policy_metrics_df["Policy type"]=="No transport efficient society") ]
+# 1. Normalize the metrics for each outcome
+for metric in metrics:
+    policy_metrics_df[f"sum_normalized_{metric}"] = 0 #initialize at 0
+    for outcome in outcomes:
+        col_name = f"{metric} {outcome}"
+        policy_metrics_df2[f"normalized_{col_name}"] = (policy_metrics_df2[col_name] - policy_metrics_df2[col_name].min()) / \
+                                                     (policy_metrics_df2[col_name].max() - policy_metrics_df2[col_name].min())
+        policy_metrics_df2[f"sum_normalized_{metric}"] =  policy_metrics_df2[f"sum_normalized_{metric}"] + policy_metrics_df2[f"normalized_{metric} {outcome}"]                                        
+
+# Main loop to plot each metric-uncertainty set combination
+for metric in metrics:
+    dynamic_outcomes = [f"{metric} {outcome}" for outcome in outcomes]
+
+    for uncertainty_set in policy_metrics_df2["Uncertainty set"].unique():
+        subset_uncertainty = policy_metrics_df2[policy_metrics_df2["Uncertainty set"] == uncertainty_set].copy()
+        
+        # Normalize data for the robustness metrics
+        normalized_data = subset_uncertainty[dynamic_outcomes].apply(lambda x: (x - x.min()) / (x.max() - x.min()), axis=0)
+        subset_uncertainty['sum_metric'] = normalized_data.sum(axis=1)
+
+        # Determine top 5 policies for this metric and uncertainty set, for each policy type including "Trv"
+        top_policies = []
+        for ptype in color_coding.keys():
+            ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].nsmallest(2, 'sum_metric').index.tolist()
+            top_policies.extend(ptype_policies)
+
+        # Plotting
+        color_list = [color_coding[ptype] if i in top_policies else light_color_coding[ptype] for i, ptype in subset_uncertainty["Policy type"].items()]
+        alpha_list = [0.8 if i in top_policies else 0.2 for i, ptype in subset_uncertainty["Policy type"].items()]
+        linewidth_list = [5 if i in top_policies else 2 for i in subset_uncertainty.index]
+
+        limits_outcomes = pd.DataFrame({col: [subset_uncertainty[col].min(), subset_uncertainty[col].max()] for col in dynamic_outcomes})
+        paraxes = parcoords.ParallelAxes(limits_outcomes,formatter={"maxima":".1f","minima":".1f"},fontsize=20,rot=45)
+        labels = list(color_coding.keys())
+        # legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
+
+        # Plotting logic remains unchanged
+        for index, (i, row) in enumerate(subset_uncertainty.iterrows()):
+            data = pd.DataFrame([row[dynamic_outcomes]])
+            color = color_list[index]
+            alpha = alpha_list[index]
+            linewidth = linewidth_list[index]
+            paraxes.plot(data.iloc[0], color=color, alpha=alpha, linewidth=linewidth)
+
+        # plt.legend(handles=legend_elements, loc='upper right')
+        # plt.title(f"Metric: {metric}, Uncertainty set: {uncertainty_set}")
+
+
+
+    # Get the figure that parcoords is using
+    parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
+    # for ax in paraxes.axes:
+    #     ax.set_xticklabels([])  # This removes the x-axis tick labels
+    #     ax.set_yticklabels([])  #
+    # Set figure size and facecolor
+    parcoords_fig.set_size_inches(15, 10)
+    parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
+    
+    # Optionally, you can add a legend if you need it
+    # paraxes.legend()
+
+    # Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
+    parcoords_fig.savefig("robustness metrics.png", dpi=500, format="png", bbox_inches="tight", transparent=True)
+    plt.show()
 plt.rcParams["figure.figsize"] = original_figsize
 
 # #%% Parcoords of policies brushed with best robustness scores per metric
@@ -554,8 +651,59 @@ for outcome in model.outcomes.keys():
 
     plt.show()
 
+#%% Vulnerability analysis
+vulnerability_analysis_policy=2 #iMPROVE THIS LOGIC LATER ON, TO SELECT THE BEST POLICY
+df_v=df_full[df_full["policy"].astype(str)==str(vulnerability_analysis_policy)]
+df_v=df_v[df_v["scenario"]!="Reference"]
+#Perform PRIM analysis
+from ema_workbench.analysis import prim
+#Set up PRIM
+# Reset the index to ensure alignment
+df_v = df_v.reset_index(drop=True)
+
+# Set up PRIM with aligned indices
+x = df_v[model.uncertainties.keys()]
+y = df_v['M1_CO2_TTW_total'] > 1.89
+prim_alg = prim.Prim(x, y, threshold=0.5)
 
 
+prim_alg = prim.Prim(x, y, threshold=0.5)
+#prim_alg = prim.Prim(x, y, threshold=0.5)
+#Find 1st box
+box1 = prim_alg.find_box()
+#
+#Visualizations of Box1
+box1.show_tradeoff()
+
+for i in range(0,len(box1.peeling_trajectory.T.columns)):
+    s=box1.peeling_trajectory.T[i].id
+    if (i%2)==0:
+        plt.text(box1.peeling_trajectory.T[i].coverage,box1.peeling_trajectory.T[i].density +.02,s,fontsize=8)
+    else:
+        plt.text(box1.peeling_trajectory.T[i].coverage,box1.peeling_trajectory.T[i].density +.02 ,s,fontsize=8)
+plt.show()
+#%%
+#Choose point for inspection
+i1=round((len(box1.peeling_trajectory.T.columns)-1))
+#or choose box manually
+i1=32
+box1.inspect(i1)
+box1.inspect(i1, style='graph')
+plt.show()
+#%%
+box1.show_ppt()
+# Save the original palette
+original_palette = sns.color_palette()
+custom_palette = ['#BBD9B8', '#FFB6B6'] 
+sns.set_palette(sns.color_palette(custom_palette)) 
+ax=box1.show_pairs_scatter(i1)
+for row in ax.axes:
+    for subplot in row:
+        subplot.set_facecolor('none')  # For the subplot background
+        subplot.grid(False)  # To remove the grid lines
+        for spine in subplot.spines.values():
+            spine.set_edgecolor('none')  # For the edges of the subplot
+plt.savefig('test_prim_box.png', transparent=True)
 #%% Comparison of what policies are selected across uncertainty sets and metrics 
 
 for uncertainty in policy_metrics_df["Uncertainty set"].unique():
