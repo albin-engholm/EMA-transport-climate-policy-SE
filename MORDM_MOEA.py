@@ -29,7 +29,7 @@ if __name__ == "__main__":
     n_scenarios=0#Numbers of scenarios to generate
     sampler=samplers.FullFactorialSampler()
     n_p=8 #set # of parallel threads
-    nfe=500000 #
+    nfe=150000 #
    #%% Specify inputs
     model.uncertainties = [
                            RealParameter("X1_car_demand", 
@@ -238,8 +238,8 @@ if __name__ == "__main__":
     #                        EpsilonProgress()]
     scenario_count=0
     #policy_types=["All levers", "No transport efficient society"]
-    #policy_types=["No transport efficient society"]#,    
-    policy_types=["All levers"]
+    policy_types=["No transport efficient society"]#,    
+    #policy_types=["All levers"]
     
     for policy_type in policy_types:
         results_list=[]

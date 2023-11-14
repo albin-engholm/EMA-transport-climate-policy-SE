@@ -26,7 +26,7 @@ if __name__ == "__main__":
     #policy_types=["All levers"]#,"No transport efficient society"]
     load_results = 1
     if load_results == 1:
-        date = "2023-07-09"
+        date = "2023-11-10"
         nfe = 500000
         count = 0
         for policy_type in policy_types:
@@ -35,7 +35,7 @@ if __name__ == "__main__":
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
-                results_list, convergence, scenarios = pickle.load(
+                results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
                 t2 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
@@ -47,12 +47,13 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if count == 1:
-                date = "2023-07-12"
+                date = "2023-11-14"
+                nfe = 150000
                 t1 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
-                results_list, convergence, scenarios = pickle.load(
+                results_list, convergence, scenarios,epsilons = pickle.load(
                     open(t1, "rb"))
                 t2 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
@@ -257,7 +258,7 @@ if __name__ == "__main__":
     #sns.pairplot(data=df_comparison,hue="Method",x_vars=model.levers.keys(),y_vars=model.levers.keys())
    # sns.pairplot(data=df_comparison[df_comparison["Policy type"]=="All levers"],hue="Method",x_vars=model.levers.keys(),y_vars=model.levers.keys())
     #sns.pairplot(data=df_comparison[df_comparison["Policy type"]!="All levers"],hue="Method",x_vars=model.levers.keys(),y_vars=model.levers.keys())
-    
+    import seaborn as sns
     # List of variables
     variables = list(model.levers.keys())
     
@@ -421,14 +422,14 @@ if __name__ == "__main__":
 
     # %% Add a new policy type "Transport effieicnt society not realized in the candidate policy data
     # Create a boolean mask for rows where Policy type is 'All levers'
-    mask = df_candidate_policies['Policy type'] == 'All levers'
+    # mask = df_candidate_policies['Policy type'] == 'All levers'
 
-    # Copy these rows, modify as needed, and append to the original DataFrame
-    new_rows = df_candidate_policies[mask].copy()
-    new_rows['Policy type'] = 'Transport efficient society not realized'
-    new_rows['L9_transport_efficient_planning_cars'] = 0
-    new_rows['L10_transport_efficient_planning_trucks'] = 0
-    df_candidate_policies = pd.concat([df_candidate_policies, new_rows])
+    # # Copy these rows, modify as needed, and append to the original DataFrame
+    # new_rows = df_candidate_policies[mask].copy()
+    # new_rows['Policy type'] = 'Transport efficient society not realized'
+    # new_rows['L9_transport_efficient_planning_cars'] = 0
+    # new_rows['L10_transport_efficient_planning_trucks'] = 0
+    # df_candidate_policies = pd.concat([df_candidate_policies, new_rows])
     # %% resetn indices
     df_candidate_policies = df_candidate_policies.reset_index(drop=True)
     # Remove unnecessary columns

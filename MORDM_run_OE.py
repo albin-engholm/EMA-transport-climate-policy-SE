@@ -19,16 +19,18 @@ if __name__ == "__main__":
     #policy_types=["All levers"]#,"No transport efficient society"]
     load_results = 1
     if load_results == 1:
-        date = "2023-07-09"
-        nfe = 500000
+        
+        
         count = 0
         for policy_type in policy_types:
             if count == 0:
+                date = "2023-11-10"
+                nfe = 500000
                 t1 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
-                results_list, convergence, scenarios = pickle.load(
+                results_list, convergence, scenarios , epsilons= pickle.load(
                     open(t1, "rb"))
                 t2 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
@@ -40,12 +42,13 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if count == 1:
-                date = "2023-07-12"
+                date = "2023-11-14"
+                nfe = 150000
                 t1 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
-                results_list, convergence, scenarios = pickle.load(
+                results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
                 t2 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
@@ -56,6 +59,8 @@ if __name__ == "__main__":
             count = count+1
             
         #Load candidate policy dataframe
+        date = "2023-11-14"
+        nfe = 150000
         filename=date+"_"+str(nfe)+"candidate_policies"+".p"    
         candidate_policy_data = pickle.load(open("./output_data/"+filename, "rb"))
 
@@ -129,8 +134,6 @@ if __name__ == "__main__":
         ScalarOutcome("CO2 TTW change trucks", ScalarOutcome.INFO,
                       variable_name="C33"),
 
-
-
         ScalarOutcome("VKT light vehicles", ScalarOutcome.INFO,
                       variable_name="C35"),
 
@@ -140,14 +143,11 @@ if __name__ == "__main__":
         ScalarOutcome("VKT total", ScalarOutcome.INFO,
                       variable_name="C37"),
 
-
         ScalarOutcome("Energy fossile total", ScalarOutcome.INFO,
                       variable_name="C39"),
 
-
         ScalarOutcome("Energy total", ScalarOutcome.INFO,
                       variable_name="C41"),
-
 
         ScalarOutcome("Electrified VKT share light vehicles", ScalarOutcome.INFO,
                       variable_name="C42"),
@@ -173,7 +173,6 @@ if __name__ == "__main__":
         ScalarOutcome("Delta CS tax", ScalarOutcome.INFO,
                       variable_name="C51")
     ]
-
 
     # scenarios=[scenarios,reference]
     #%% Set up two runs for various uncertainty parameters #Run model - for open exploration
@@ -253,7 +252,7 @@ if __name__ == "__main__":
         for i in range(nr_scenarios):
             s_dict = {k: v for k, v in zip(scenarios.params, scenarios.designs[i])}
             scenario_list.append(Scenario(str(i), **s_dict))
-            
+          
             
         with MultiprocessingEvaluator(msis=model, n_processes=n_p) as evaluator:
             experiments,outcomes = perform_experiments(model,
