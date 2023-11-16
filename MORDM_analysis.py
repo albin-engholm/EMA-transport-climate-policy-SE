@@ -16,7 +16,7 @@ load_results = 1
 load_results = 1
 if load_results == 1:
     from ema_workbench import load_results
-    date = "2023-08-10"
+    date = "2023-11-15"
     n_scenarios = 500
     # for policy_type in policy_types:
     t1 = './output_data/'+"X_XP"+str(n_scenarios)+'_scenarios_MORDM_OE_'+date+".p"
@@ -50,7 +50,111 @@ if load_results == 1:
             df_full.loc[index,"Uncertainty set"] = "X"
         else:
             df_full.loc[index,"Uncertainty set"] = "XP"
+    df_full=df_full[df_full["policy"]!="Reference policy"]
+#%% Visualization of reference scenario performance
+df_reference_subset=df_full[(df_full["scenario"]=="Reference")&(df_full["Uncertainty set"]=="XP")]
+# Step 2: Plot parallel coordinates
+outcomes = model.outcomes.keys()
+outcomes = ['M1_CO2_TTW_total',
+        'M2_driving_cost_car',
+        'M3_driving_cost_truck',
+        'M4_energy_use_bio',
+        'M5_energy_use_electricity']
+limits_outcomes = pd.DataFrame()  # Create a dataframe for lever-based limits
+for item in outcomes:
+    limits_outcomes.loc[0, item] = min(df_reference_subset[item])  # Get lower bound
+    limits_outcomes.loc[1, item] = max(df_reference_subset[item])  # Get upper bound
+paraxes = parcoords.ParallelAxes(limits_outcomes,formatter={"maxima":".1f","minima":".1f"},fontsize=20,rot=90)
+
+# Non-selected policies in gray
+
+# Create a colormap for unique policy types using viridis
+n_unique_policies = len(df_reference_subset['Policy type'].unique())
+# Manually specify colors: Dark Plum and Dark Gold
+colors = ["blue", "orange","red"]
+
+# Plot selected policies with the manually specified colors
+for idx, policy_type in enumerate(df_reference_subset['Policy type'].unique()):
+    selected_data = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
+    paraxes.plot(selected_data, label=f'Policy type: {policy_type}', color=colors[idx])
+
+# Get the figure that parcoords is using
+parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
+# for ax in paraxes.axes:
+#     ax.set_xticklabels([])  # This removes the x-axis tick labels
+#     ax.set_yticklabels([])  #
+# Set figure size and facecolor
+parcoords_fig.set_size_inches(10, 10)
+#parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
+
+# Optionally, you can add a legend if you need it
+paraxes.legend()
+
+# Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
+parcoords_fig.savefig("parcoords_candidate_policies_reference_outcomes.png", dpi=300, format="png", bbox_inches="tight", transparent=True)
+# Pairplot outcomes on outcomes
+sns.pairplot(data=df_reference_subset,x_vars=outcomes,y_vars=outcomes,hue="Policy type", palette = colors, diag_kws={"common_norm":False})
     
+# The same plot but over the levers
+levers = model.levers.keys()
+
+limits_levers = pd.DataFrame()  # Create a dataframe for lever-based limits
+for item in levers:
+    limits_levers.loc[0, item] = min(df_reference_subset[item])  # Get lower bound
+    limits_levers.loc[1, item] = max(df_reference_subset[item])  # Get upper bound
+paraxes = parcoords.ParallelAxes(limits_levers,formatter={"maxima":".1f","minima":".1f"},fontsize=20,rot=90)
+
+# Non-selected policies in gray
+
+# Create a colormap for unique policy types using viridis
+
+
+# Plot selected policies with the manually specified colors
+for idx, policy_type in enumerate(df_reference_subset['Policy type'].unique()):
+    selected_data = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
+    paraxes.plot(selected_data, label=f'Policy type: {policy_type}', color=colors[idx])
+
+# Get the figure that parcoords is using
+parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
+# for ax in paraxes.axes:
+#     ax.set_xticklabels([])  # This removes the x-axis tick labels
+#     ax.set_yticklabels([])  #
+# Set figure size and facecolor
+parcoords_fig.set_size_inches(10, 10)
+#parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
+
+# Optionally, you can add a legend if you need it
+paraxes.legend()
+
+# Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
+parcoords_fig.savefig("parcoords_candidate_policies_reference_levers.png", dpi=300, format="png", bbox_inches="tight", transparent=True)
+
+# If you want to show the plot, you would now use
+plt.show()  
+# Pairplot levers on levers
+sns.pairplot(data=df_reference_subset,x_vars=outcomes,y_vars=outcomes,hue="Policy type", palette = colors, diag_kws={"common_norm":False})
+
+for outcome in outcomes:
+
+    # Plot both distributions
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    sns.histplot(df_reference_subset[outcome], kde=True, ax=ax2,
+                 label="Reference scenario, right axis", color='red')
+    ax2.set_ylabel("Reference", color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
+    plt.axvline(df_reference_subset[outcome].quantile(0.5), color="red")
+
+    sns.histplot(df_full[outcome], kde=True, ax=ax1,
+                 label="All scenarios, left axis", color='blue')
+    ax1.set_ylabel('All scenarios', color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+    plt.axvline(df_full[outcome].quantile(0.5), color="blue")
+    plt.axvline(df_full[outcome].quantile(0.9), color="blue",linestyle="--")
+
+    fig.legend(loc='upper right')
+
+    plt.show()
 # %% Calculate robustness metrics
 import statistics
 
@@ -142,7 +246,7 @@ for outcome in outcomes_M:
         ]
         
         # Create the pairplot
-        plot = sns.pairplot(data=subset_df, vars=metrics, diag_kind="kde", hue="Policy type", height=2.5)
+        plot = sns.pairplot(data=subset_df, vars=metrics, diag_kind="kde", hue="Policy type", height=2.5,palette=colors,diag_kws={"common_norm":False})
         plot.fig.suptitle(f"Outcome: {outcome}, Uncertainty Set: {uncertainty_set}", y=1.02)
         
         # Adjust x-labels and y-labels for better readability
@@ -219,13 +323,13 @@ plt.rcParams["figure.figsize"] = original_figsize
 from matplotlib.patches import Patch
 
 # Define your color coding for the legend
-color_coding = {"All levers": 'blue', "No transport efficient society": 'r', "Transport efficient society not realized": 'g', "Trv":'black'}
+color_coding = {"All levers": 'blue', "No transport efficient society": 'orange', "Trv":'red'}
 
 # Save the original default size
 original_figsize = plt.rcParams["figure.figsize"]
 
 # Set the figure size you want
-plt.rcParams["figure.figsize"] = [16, 12]
+plt.rcParams["figure.figsize"] = [10, 10]
 
 metrics = [
     "90_percentile_deviation", 
@@ -240,7 +344,8 @@ for metric in metrics:
                                                               'M4_energy_use_bio',
                                                               'M5_energy_use_electricity']]  # Dynamic outcomes
     
-    for uncertainty_set in policy_metrics_df["Uncertainty set"].unique():
+    #for uncertainty_set in policy_metrics_df["Uncertainty set"].unique():
+    for uncertainty_set in ["XP"]:
         policy_metrics_subset = policy_metrics_df[policy_metrics_df["Uncertainty set"] == uncertainty_set]
         
         color_list = [color_coding[pt] for pt in policy_metrics_subset["Policy type"]]
@@ -276,7 +381,7 @@ for metric in metrics:
         plt.show()
 
 plt.rcParams["figure.figsize"] = original_figsize
-#%%
+#%% Parcoords of all metrics
 from matplotlib.patches import Patch
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -285,22 +390,20 @@ from ema_workbench.analysis import parcoords
 # Define your color coding for the legend
 color_coding = {
     "All levers": 'blue',
-    "No transport efficient society": 'r',
-    "Transport efficient society not realized": 'g',
-    "Trv": 'black'
+    "No transport efficient society": 'orange',
+    "Trv": 'red'
 }
 
 # Create a dictionary for the light colors
 light_color_coding = {
-    "All levers": 'lightblue',
-    "No transport efficient society": 'pink',
-    "Transport efficient society not realized": 'lightgreen',
-    "Trv": 'lightgray'
+    "All levers": 'blue',
+    "No transport efficient society": 'yellow',
+    "Trv": 'pink'
 }
 
 # Save the original default size
 original_figsize = plt.rcParams["figure.figsize"]
-plt.rcParams["figure.figsize"] = [16, 12]
+plt.rcParams["figure.figsize"] = [10, 10]
 
 outcomes = [
     'M1_CO2_TTW_total',
@@ -324,23 +427,29 @@ for metric in metrics:
 for metric in metrics:
     dynamic_outcomes = [f"{metric} {outcome}" for outcome in outcomes]
 
-    for uncertainty_set in policy_metrics_df["Uncertainty set"].unique():
+    #for uncertainty_set in policy_metrics_df["Uncertainty set"].unique():
+    for uncertainty_set in ["XP"]:
         subset_uncertainty = policy_metrics_df[policy_metrics_df["Uncertainty set"] == uncertainty_set].copy()
         
         # Normalize data for the robustness metrics
         normalized_data = subset_uncertainty[dynamic_outcomes].apply(lambda x: (x - x.min()) / (x.max() - x.min()), axis=0)
         subset_uncertainty['sum_metric'] = normalized_data.sum(axis=1)
 
-        # Determine top 5 policies for this metric and uncertainty set, for each policy type including "Trv"
+        # Determine top 5 policies for this metric and uncertainty set, for each policy type, excluding "Trv"
         top_policies = []
         for ptype in color_coding.keys():
-            ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].nsmallest(2, 'sum_metric').index.tolist()
-            top_policies.extend(ptype_policies)
+            if ptype!= "Trv":
+                ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].nsmallest(5, 'sum_metric').index.tolist()
+                top_policies.extend(ptype_policies)
+            else:
+                ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].index.tolist()
+                top_policies.extend(ptype_policies)
 
         # Plotting
         color_list = [color_coding[ptype] if i in top_policies else light_color_coding[ptype] for i, ptype in subset_uncertainty["Policy type"].items()]
-        alpha_list = [0.7 if i in top_policies else 0.2 for i, ptype in subset_uncertainty["Policy type"].items()]
+        alpha_list = [0.9 if i in top_policies else 0.1 for i, ptype in subset_uncertainty["Policy type"].items()]
         linewidth_list = [2 if i in top_policies else 1 for i in subset_uncertainty.index]
+        zorder_list = [10 if i in top_policies else 1 for i in subset_uncertainty.index]
 
         limits_outcomes = pd.DataFrame({col: [subset_uncertainty[col].min(), subset_uncertainty[col].max()] for col in dynamic_outcomes})
         paraxes = parcoords.ParallelAxes(limits_outcomes)
@@ -353,10 +462,12 @@ for metric in metrics:
             color = color_list[index]
             alpha = alpha_list[index]
             linewidth = linewidth_list[index]
-            paraxes.plot(data.iloc[0], color=color, alpha=alpha, linewidth=linewidth)
+            zorder = zorder_list[index] 
+            paraxes.plot(data.iloc[0], color=color, alpha=alpha, linewidth=linewidth, zorder=zorder)
 
         plt.legend(handles=legend_elements, loc='upper right')
-        plt.title(f"Metric: {metric}, Uncertainty set: {uncertainty_set}")
+        #plt.title(f"Metric: {metric}, Uncertainty set: {uncertainty_set}")
+        plt.title(f"Metric: {metric}")
         plt.show()
 
 plt.rcParams["figure.figsize"] = original_figsize
@@ -415,7 +526,7 @@ for metric in metrics:
         # Determine top 5 policies for this metric and uncertainty set, for each policy type including "Trv"
         top_policies = []
         for ptype in color_coding.keys():
-            ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].nsmallest(2, 'sum_metric').index.tolist()
+            ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].nsmallest(10, 'sum_metric').index.tolist()
             top_policies.extend(ptype_policies)
 
         # Plotting
@@ -458,201 +569,32 @@ for metric in metrics:
     plt.show()
 plt.rcParams["figure.figsize"] = original_figsize
 
-# #%% Parcoords of policies brushed with best robustness scores per metric
-
-# from matplotlib.patches import Patch
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# from ema_workbench.analysis import parcoords
-
-# # Define your color coding for the legend
-# color_coding = {
-#     "All levers": 'blue',
-#     "No transport efficient society": 'r',
-#     "Transport efficient society not realized": 'g',
-#     "Trv": 'black'
-# }
-
-# # Create a dictionary for the light colors
-# light_color_coding = {
-#     "All levers": 'lightblue',
-#     "No transport efficient society": 'pink',
-#     "Transport efficient society not realized": 'lightgreen',
-#     "Trv": 'lightgray'
-# }
-
-# # Save the original default size
-# original_figsize = plt.rcParams["figure.figsize"]
-# plt.rcParams["figure.figsize"] = [16, 12]
-
-# outcomes = [
-#     'M1_CO2_TTW_total',
-#     'M2_driving_cost_car',
-#     'M3_driving_cost_truck',
-#     'M4_energy_use_bio',
-#     'M5_energy_use_electricity'
-# ]
-# metrics = ["90_percentile_deviation", "Max_regret", "Mean/standard_deviation"]
-
-# # 1. Normalize the metrics for each outcome
-# for metric in metrics:
-#     for outcome in outcomes:
-#         col_name = f"{metric} {outcome}"
-#         policy_metrics_df[f"normalized_{col_name}"] = (policy_metrics_df[col_name] - policy_metrics_df[col_name].min()) / \
-#                                                      (policy_metrics_df[col_name].max() - policy_metrics_df[col_name].min())
-
-# # 2. Calculate the sum for each policy
-# policy_metrics_df['sum_normalized'] = policy_metrics_df[[f"normalized_{metric} {outcome}" for metric in metrics for outcome in outcomes]].sum(axis=1)
-
-# # 3. Determine top 5 policies for each type
-# top_policies = {}
-# for ptype in color_coding.keys():
-#     if ptype != "Trv":
-#         top_policies[ptype] = policy_metrics_df[policy_metrics_df["Policy type"] == ptype].nsmallest(5, 'sum_normalized').index.tolist()
-
-
-
-# highlighted_policies_df = pd.DataFrame(
-#     index=pd.MultiIndex.from_product([metrics, policy_metrics_df["Uncertainty set"].unique()], names=['metric', 'uncertainty_set']),
-#     columns=['top_policies']
-# )
-
-
-# for metric in metrics:
-#     dynamic_outcomes = [f"{metric} {outcome}" for outcome in outcomes]
-
-#     for uncertainty_set in policy_metrics_df["Uncertainty set"].unique():
-#         subset_uncertainty = policy_metrics_df[policy_metrics_df["Uncertainty set"] == uncertainty_set].copy()  # Create a copy to prevent SettingWithCopyWarning
-
-#         # Initialize an empty list to store indices of top policies for each policy type
-#         top_policy_indices = []
-
-#         for ptype in color_coding.keys():
-#             subset = subset_uncertainty[subset_uncertainty["Policy type"] == ptype].copy()
-
-#             # Normalize data for the robustness metrics
-#             normalized_data = subset[dynamic_outcomes].apply(lambda x: (x - x.min()) / (x.max() - x.min()), axis=0)
-#             subset.loc[:,'sum_metric'] = normalized_data.sum(axis=1)
-
-#             # Determine top 5 policies for each combination and append their indices
-#             top_policy_indices.extend(subset.nsmallest(5, 'sum_metric').index)
-#             highlighted_policies_df.loc[(metric, uncertainty_set), 'top_policies'] = [top_policy_indices]
-#         # Plotting
-#         subset_plot = subset_uncertainty  # Select all policies for this metric and uncertainty set
-#         color_list = [color_coding[ptype] if i in top_policy_indices else light_color_coding[ptype] for i, ptype in subset_plot["Policy type"].items()]
-#         alpha_list = [0.7 if i in top_policy_indices or ptype == "Trv" else 0.2 for i, ptype in subset_plot["Policy type"].items()]  # Adjust alpha for highlighted policies
-#         linewidth_list = [2 if i in top_policy_indices else 1 for i in subset_plot.index]  # Adjust linewidth for highlighted policies
-        
-#         limits_outcomes = pd.DataFrame({col: [subset_plot[col].min(), subset_plot[col].max()] for col in dynamic_outcomes})
-#         paraxes = parcoords.ParallelAxes(limits_outcomes)
-#         labels = list(color_coding.keys())
-#         legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
-        
-#         # First, plot non-highlighted policies
-#         for index, (i, row) in enumerate(subset_plot.iterrows()):
-#             if linewidth_list[index] == 1:  # If it's a non-highlighted policy
-#                 data = pd.DataFrame([row[dynamic_outcomes]])  # Convert data to a DataFrame
-#                 color = color_list[index]
-#                 alpha = alpha_list[index]
-#                 linewidth = linewidth_list[index]
-#                 paraxes.plot(data.iloc[0], color=color, alpha=alpha, linewidth=linewidth)  # Use the specified alpha and linewidth value
-        
-#         # Then, plot highlighted policies on top
-#         for index, (i, row) in enumerate(subset_plot.iterrows()):
-#             if linewidth_list[index] == 2:  # If it's a highlighted policy
-#                 data = pd.DataFrame([row[dynamic_outcomes]])  # Convert data to a DataFrame
-#                 color = color_list[index]
-#                 alpha = alpha_list[index]
-#                 linewidth = linewidth_list[index]
-#                 paraxes.plot(data.iloc[0], color=color, alpha=alpha, linewidth=linewidth)  # Use the specified alpha and linewidth value
-        
-#         plt.legend(handles=legend_elements, loc='upper right')
-#         plt.title(f"Metric: {metric}, Uncertainty set: {uncertainty_set}")
-#         plt.show()
-
-# plt.rcParams["figure.figsize"] = original_figsize
-
-
-# %% Parcoords of performance in reference scenario
-
-# Get the limits from lever ranges
-df_reference = df_full[df_full["scenario"] == "Reference"]
-outcomes = model.outcomes.keys()  # Get levers
-limits_outcomes = pd.DataFrame()  # Create a dataframe for lever-based limits
-for item in outcomes:
-    limits_outcomes.loc[0, item] = min(df_reference[item])  # Get lower bound
-    limits_outcomes.loc[1, item] = max(df_reference[item])  # Get upper bound
-
-limits = limits_outcomes
-
-# Create the parallel coordinates plot
-paraxes = parcoords.ParallelAxes(limits)
-count = 0
-
-paraxes.plot(df_reference)
-
-# Set the legend and show the plot
-
-plt.show()
-
-# %% Parcoords of levers
-
-# Get the limits from lever ranges
-levers = model.levers.keys()  # Get levers
-limits_outcomes = pd.DataFrame()  # Create a dataframe for lever-based limits
-for item in levers:
-    limits_outcomes.loc[0, item] = min(df_reference[item])  # Get lower bound
-    limits_outcomes.loc[1, item] = max(df_reference[item])  # Get upper bound
-
-limits = limits_outcomes
-
-# Create the parallel coordinates plot
-paraxes = parcoords.ParallelAxes(limits)
-count = 0
-
-paraxes.plot(df_reference)
-
-# Set the legend and show the plot
-paraxes.legend()
-plt.show()
-
-# #%%
-# from pandas.plotting import parallel_coordinates
-# parallel_coordinates(policy_metrics_df,"Policy type",use_columns=["R90% M1_CO2_change_total"])
-# %% Plot relationships between outcomes in reference scenario
-
-# sns.pairplot(data=df_reference[model.outcomes.keys()])
-#%% Pairplot
-import seaborn as sns
-# sns.pairplot(data=df_full,x_vars=model.levers.keys(),y_vars=model.outcomes.keys(),hue="Policy type")
-# sns.pairplot(data=df_full,x_vars=model.levers.keys(),y_vars=model.outcomes.keys(),kind="hist",hue="Policy type")
-
-# %% Plot distribution of each metric
-
-for outcome in model.outcomes.keys():
-
-    # Plot both distributions
-    fig, ax1 = plt.subplots()
-    ax2 = ax1.twinx()
-    sns.histplot(df_reference[outcome], kde=True, ax=ax2,
-                 label="Reference scenario, right axis", color='red')
-    ax2.set_ylabel("Reference", color='red')
-    ax2.tick_params(axis='y', labelcolor='red')
-    plt.axvline(df_reference[outcome].quantile(0.5), color="red")
-
-    sns.histplot(df_full[outcome], kde=True, ax=ax1,
-                 label="All scenarios, left axis", color='blue')
-    ax1.set_ylabel('All scenarios', color='blue')
-    ax1.tick_params(axis='y', labelcolor='blue')
-    plt.axvline(df_full[outcome].quantile(0.5), color="blue")
-    plt.axvline(df_full[outcome].quantile(0.9), color="blue",linestyle="--")
-
-    fig.legend(loc='upper right')
-
-    plt.show()
 
 #%% Vulnerability analysis
-vulnerability_analysis_policy=2 #iMPROVE THIS LOGIC LATER ON, TO SELECT THE BEST POLICY
+#Policies selected for analysis
+vulnerability_policies=[5, 103,"B"]
+
+# Parcoords of vulnerability policies
+paraxes = parcoords.ParallelAxes(limits_levers,formatter={"maxima":".1f","minima":".1f"},fontsize=20,rot=90)
+# Plot selected policies with the manually specified colors
+for idx, policy in enumerate (vulnerability_policies):
+    selected_data = df_full[df_full['policy'] == str(policy)].iloc[0]
+    policy_type=selected_data["Policy type"]
+    paraxes.plot(selected_data, label=f'Policy type: {policy_type}', color=colors[idx])
+
+# Get the figure that parcoords is using
+parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
+# for ax in paraxes.axes:
+#     ax.set_xticklabels([])  # This removes the x-axis tick labels
+#     ax.set_yticklabels([])  #
+# Set figure size and facecolor
+parcoords_fig.set_size_inches(10, 10)
+#parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
+
+# Optionally, you can add a legend if you need it
+paraxes.legend()
+#%%
+vulnerability_analysis_policy="B" # #99 ALl levers, #183 no transport efficiency "B" TRV
 df_v=df_full[df_full["policy"].astype(str)==str(vulnerability_analysis_policy)]
 df_v=df_v[df_v["scenario"]!="Reference"]
 #Perform PRIM analysis
@@ -686,7 +628,7 @@ plt.show()
 #Choose point for inspection
 i1=round((len(box1.peeling_trajectory.T.columns)-1))
 #or choose box manually
-i1=32
+i1=19
 box1.inspect(i1)
 box1.inspect(i1, style='graph')
 plt.show()
@@ -694,7 +636,7 @@ plt.show()
 box1.show_ppt()
 # Save the original palette
 original_palette = sns.color_palette()
-custom_palette = ['#BBD9B8', '#FFB6B6'] 
+custom_palette = ['green', 'red'] 
 sns.set_palette(sns.color_palette(custom_palette)) 
 ax=box1.show_pairs_scatter(i1)
 for row in ax.axes:

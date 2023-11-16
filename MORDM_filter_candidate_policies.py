@@ -373,18 +373,18 @@ if __name__ == "__main__":
     limits_outcomes.rename(columns=renamed_columns, inplace=True)
     df_full.rename(columns=renamed_columns, inplace=True)
     df_candidate_policies.rename(columns=renamed_columns, inplace=True)
-    #%%
+    #%% Plot for poster
     # Step 2: Plot parallel coordinates
     
     paraxes = parcoords.ParallelAxes(limits_outcomes,formatter={"maxima":".1f","minima":".1f"},fontsize=20,rot=0)
     
     # Non-selected policies in gray
-    #paraxes.plot(df_full[df_full.index.isin(df_candidate_policies.index) == False], color='white',linewidth=0.1,alpha=0.5)
+    paraxes.plot(df_full[df_full.index.isin(df_candidate_policies.index) == False], color='lightgrey',linewidth=0.1,alpha=0.5)
     
     # Create a colormap for unique policy types using viridis
     n_unique_policies = len(df_candidate_policies['Policy type'].unique())
     # Manually specify colors: Dark Plum and Dark Gold
-    colors = ["#E9C2C0", "#610100"]
+    colors = ["#blue", "orange"]
 
     # Plot selected policies with the manually specified colors
     for idx, policy_type in enumerate(df_candidate_policies['Policy type'].unique()):
