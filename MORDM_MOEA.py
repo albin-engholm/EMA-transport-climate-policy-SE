@@ -29,7 +29,7 @@ if __name__ == "__main__":
     n_scenarios=0#Numbers of scenarios to generate
     sampler=samplers.FullFactorialSampler()
     n_p=8 #set # of parallel threads
-    nfe=150000 #
+    nfe=200000 # Number of nfes considered in optimization
    #%% Specify inputs
     model.uncertainties = [
                            RealParameter("X1_car_demand", 
@@ -91,10 +91,27 @@ if __name__ == "__main__":
         model.constants = [Constant("C10", "Yes")]
     #Set bus energy use to "Level 1" as defualt
     model.constants = [Constant("C63", "Level 1")]
+#Old setup with CO2 and without tax revenues
+    # model.outcomes = [
+    #                   ScalarOutcome("M1_CO2_TTW_total", ScalarOutcome.MINIMIZE,
+    #                                 variable_name="C58"),
 
+    #                   ScalarOutcome("M2_driving_cost_car",ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C54"),
+                      
+    #                   ScalarOutcome("M3_driving_cost_truck",ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C55"), 
+                      
+    #                   ScalarOutcome("M4_energy_use_bio", ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C38"),
+
+    #                   ScalarOutcome("M5_energy_use_electricity",ScalarOutcome.MINIMIZE,
+    #                                 variable_name="C40"),#min,
+    #                   ]
+   # New test setup with tax revenues and only constraint on CO2 
     model.outcomes = [
-                      ScalarOutcome("M1_CO2_TTW_total", ScalarOutcome.MINIMIZE,
-                                    variable_name="C58"),
+                      ScalarOutcome("M1_tax_revenues", ScalarOutcome.MAXIMIZE,
+                                                         variable_name="C59"),
 
                       ScalarOutcome("M2_driving_cost_car",ScalarOutcome.MINIMIZE, 
                                     variable_name="C54"),
@@ -106,7 +123,9 @@ if __name__ == "__main__":
                                     variable_name="C38"),
 
                       ScalarOutcome("M5_energy_use_electricity",ScalarOutcome.MINIMIZE,
-                                    variable_name="C40"),#min
+                                    variable_name="C40"),#min,
+                   ScalarOutcome("M6_CO2_TTW_total", ScalarOutcome.INFO,
+                                 variable_name="C58"),
                       ]
    #%% Create scenarios to sample over
     from ema_workbench import Scenario
@@ -219,8 +238,8 @@ if __name__ == "__main__":
     #                           function=lambda x : max(0, x-CO2_target)),
     #                 Constraint("max bio", outcome_names="Energy bio total",
     #                                           function=lambda y : max(0, y-bio_target))]
-    
-    constraints = [Constraint("max CO2", outcome_names="M1_CO2_TTW_total",
+    #UPDATE OUTCOME NAME
+    constraints = [Constraint("max CO2", outcome_names="M6_CO2_TTW_total",
                               function=lambda x : max(0, x-CO2_target))]
     #constraints=[]
 #%%#Simulation settings and RUN
@@ -238,8 +257,8 @@ if __name__ == "__main__":
     #                        EpsilonProgress()]
     scenario_count=0
     #policy_types=["All levers", "No transport efficient society"]
-    policy_types=["No transport efficient society"]#,    
-    #policy_types=["All levers"]
+    #policy_types=["No transport efficient society"]#,    
+    policy_types=["All levers"]
     
     for policy_type in policy_types:
         results_list=[]
@@ -259,10 +278,10 @@ if __name__ == "__main__":
                                           0, 1,
                                           variable_name="C77"),
                             RealParameter("L3_additional_car_energy_efficiency",
-                                          0.0499,.05
+                                          0.0,.05
                                           ,variable_name="C72"),
                             RealParameter("L4_additional_truck_energy_efficiency",
-                                          0.0499,.05
+                                          0.0,.05
                                           ,variable_name="C73"),
                             RealParameter("L5_fuel_tax_increase_gasoline",
                                           0,.12
@@ -277,10 +296,10 @@ if __name__ == "__main__":
                                           0,3
                                           ,variable_name="C69"),
                             RealParameter("L9_transport_efficient_planning_cars",
-                                          .2499,.25
+                                          .0,.25
                                           ,variable_name="C74"),
                             RealParameter("L10_transport_efficient_planning_trucks",
-                                          .2499,.25
+                                          .0,.25
                                           ,variable_name="C75")
                     ]
             
