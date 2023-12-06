@@ -23,11 +23,11 @@ if __name__ == "__main__":
     import pandas as pd
     df_full = pd.DataFrame()
     policy_types = ["All levers", "No transport efficient society"]
-    #policy_types=["All levers"]#,"No transport efficient society"]
+    policy_types=["All levers"]#,"No transport efficient society"]
     load_results = 1
     if load_results == 1:
-        date = "2023-11-10"
-        nfe = 500000
+        date = "2023-12-03"
+        nfe = 200000
         count = 0
         for policy_type in policy_types:
             if count == 0:
@@ -98,7 +98,10 @@ if __name__ == "__main__":
         plt.show()
 #%%   Plot policies against outcomes 
     # Get the limits from lever ranges
-    outcomes = model.outcomes.keys()
+    outcomes=[]
+    for outcome in model.outcomes:
+        if outcome.kind != 0: #0 means INFO
+            outcomes.append(outcome.name)
     limits_outcomes = pd.DataFrame()  # Create a dataframe for lever-based limits
     for item in outcomes:
         limits_outcomes.loc[0, item] = min(df_full[item])  # Get lower bound
@@ -117,15 +120,15 @@ if __name__ == "__main__":
     
     #%% pairplots of all policies
     import seaborn as sns
-    pairplot_kws={"alpha":0.5,"s":0.2}
+    pairplot_kws={"alpha":0.7,"s":0.5}
     #levers on levers
    # sns.pairplot(data=df_full,x_vars=model.levers.keys(),y_vars=model.levers.keys(),hue="Policy type",plot_kws=pairplot_kws)
     
     #outcomes on outcomes
-  #  sns.pairplot(data=df_full,x_vars=model.outcomes.keys(),y_vars=model.outcomes.keys(),hue="Policy type",plot_kws=pairplot_kws)
+    sns.pairplot(data=df_full,x_vars=outcomes,y_vars=outcomes,hue="Policy type",plot_kws=pairplot_kws)
     
     #levers on outcomes
-#    sns.pairplot(data=df_full,x_vars=model.levers.keys(),y_vars=model.outcomes.keys(),hue="Policy type",plot_kws=pairplot_kws)         
+    sns.pairplot(data=df_full,x_vars=model.levers.keys(),y_vars=outcomes,hue="Policy type",plot_kws=pairplot_kws)         
 
 #%% Create a dataframe only with policies that meet the climate target
     CO2_target=0.1*18.9 #90% reduction  compared to 2010

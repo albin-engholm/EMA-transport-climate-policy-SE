@@ -29,7 +29,7 @@ if __name__ == "__main__":
     n_scenarios=0#Numbers of scenarios to generate
     sampler=samplers.FullFactorialSampler()
     n_p=8 #set # of parallel threads
-    nfe=200000 # Number of nfes considered in optimization
+    nfe=30000 # Number of nfes  in optimization
    #%% Specify inputs
     model.uncertainties = [
                            RealParameter("X1_car_demand", 
@@ -59,6 +59,7 @@ if __name__ == "__main__":
                            ,RealParameter("X9_SAV_driving_cost",
                                          -.1,1,
                                          variable_name="Indata!G76")
+                           
                            ,RealParameter("X10_SAV_energy_efficiency",
                                          0,0.25,
                                          variable_name="Indata!G75")
@@ -91,27 +92,11 @@ if __name__ == "__main__":
         model.constants = [Constant("C10", "Yes")]
     #Set bus energy use to "Level 1" as defualt
     model.constants = [Constant("C63", "Level 1")]
-#Old setup with CO2 and without tax revenues
-    # model.outcomes = [
-    #                   ScalarOutcome("M1_CO2_TTW_total", ScalarOutcome.MINIMIZE,
-    #                                 variable_name="C58"),
-
-    #                   ScalarOutcome("M2_driving_cost_car",ScalarOutcome.MINIMIZE, 
-    #                                 variable_name="C54"),
-                      
-    #                   ScalarOutcome("M3_driving_cost_truck",ScalarOutcome.MINIMIZE, 
-    #                                 variable_name="C55"), 
-                      
-    #                   ScalarOutcome("M4_energy_use_bio", ScalarOutcome.MINIMIZE, 
-    #                                 variable_name="C38"),
-
-    #                   ScalarOutcome("M5_energy_use_electricity",ScalarOutcome.MINIMIZE,
-    #                                 variable_name="C40"),#min,
-    #                   ]
-   # New test setup with tax revenues and only constraint on CO2 
+    
+    #Old setup with CO2 and without tax revenues
     model.outcomes = [
-                      ScalarOutcome("M1_tax_revenues", ScalarOutcome.MAXIMIZE,
-                                                         variable_name="C59"),
+                      ScalarOutcome("M1_CO2_TTW_total", ScalarOutcome.INFO,
+                                    variable_name="C58"), #Min / info 
 
                       ScalarOutcome("M2_driving_cost_car",ScalarOutcome.MINIMIZE, 
                                     variable_name="C54"),
@@ -124,9 +109,27 @@ if __name__ == "__main__":
 
                       ScalarOutcome("M5_energy_use_electricity",ScalarOutcome.MINIMIZE,
                                     variable_name="C40"),#min,
-                   ScalarOutcome("M6_CO2_TTW_total", ScalarOutcome.INFO,
-                                 variable_name="C58"),
                       ]
+    
+   # New test setup with tax revenues and only constraint on CO2 
+    # model.outcomes = [
+    #                   ScalarOutcome("M1_CO2_TTW_total", ScalarOutcome.MAXIMIZE,
+    #                                                      variable_name="C5"),
+
+    #                   ScalarOutcome("M2_driving_cost_car",ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C54"),
+                      
+    #                   ScalarOutcome("M3_driving_cost_truck",ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C55"), 
+                      
+    #                   ScalarOutcome("M4_energy_use_bio", ScalarOutcome.MINIMIZE, 
+    #                                 variable_name="C38"),
+
+    #                   ScalarOutcome("M5_energy_use_electricity",ScalarOutcome.MINIMIZE,
+    #                                 variable_name="C40"),#min,
+    #                ScalarOutcome("M6_CO2_TTW_total", ScalarOutcome.INFO,
+    #                              variable_name="C58"),
+    #                   ]
    #%% Create scenarios to sample over
     from ema_workbench import Scenario
     import pandas as pd
@@ -239,7 +242,7 @@ if __name__ == "__main__":
     #                 Constraint("max bio", outcome_names="Energy bio total",
     #                                           function=lambda y : max(0, y-bio_target))]
     #UPDATE OUTCOME NAME
-    constraints = [Constraint("max CO2", outcome_names="M6_CO2_TTW_total",
+    constraints = [Constraint("max CO2", outcome_names="M1_CO2_TTW_total",
                               function=lambda x : max(0, x-CO2_target))]
     #constraints=[]
 #%%#Simulation settings and RUN
@@ -343,20 +346,21 @@ if __name__ == "__main__":
             print("Scenario: ",scenario_count)
             reference = Scenario()
             reference.data=scenario
-            
+            from datetime import date   
             convergence_metrics = [
                 ArchiveLogger(
                     "./archives",
                     [l.name for l in model.levers],
-                    [o.name for o in model.outcomes],
-                    base_filename=f"{policy_type}.tar.gz",
+                    [o.name for o in model.outcomes if o.kind!=0],
+                    base_filename=f"{str(nfe)}_{policy_type}_{str(date.today())}.tar.gz",
                 ),
                 EpsilonProgress(),
             ]
+            
             # convergence_metrics = [
             #                        EpsilonProgress()]
-            epsilons = [0.2, .5, 2.5, 0.2, 0.2] #Epsilons for M1-M5
-            
+            epsilons = [.5, 2.5, 0.2, 0.2] #Epsilons for M2-M5
+
             # Create instances of the crossover and mutation operators
             from platypus import SBX, PM, GAOperator
             crossover = SBX(probability=1, distribution_index=20)
@@ -395,7 +399,7 @@ if __name__ == "__main__":
      #Save results?
         save_results=1
         if save_results==1:
-            from datetime import date    
+             
             from ema_workbench import save_results
             filename=str(nfe)+'_nfe_directed_search_MORDM_'+str(date.today())
             filename1=policy_type+filename+'.p'

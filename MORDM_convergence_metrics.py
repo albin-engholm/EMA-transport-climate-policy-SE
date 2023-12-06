@@ -16,15 +16,15 @@ import matplotlib.pyplot as plt
 #policy_types=["All levers", "No transport efficient society"]
 #policy_types=["No transport efficient society"]#,
 policy_types=["All levers"]
-date='2023-11-04'#Specify date the MORDM MOEA was completed
-nfe=500000 #Specify the number of nfes used for the MORDM MOEA
+date='2023-12-06'#Specify date the MORDM MOEA was completed
+nfe=100 #Specify the number of nfes used for the MORDM MOEA
                 
 metrics=True
 if metrics:
     all_archives = []
     
     for policy_type in policy_types:
-        archives = ArchiveLogger.load_archives(f"./archives/{policy_type}.tar.gz") #load archive
+        archives = ArchiveLogger.load_archives(f"./archives/{str(nfe)}_{policy_type}_{date}.tar.gz") #load archive
         model_filename = './output_data/'+policy_type + str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
         model = pickle.load(open(model_filename, "rb")) #Load model
         results_filename = './output_data/'+policy_type+str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
@@ -50,8 +50,11 @@ if metrics:
         SpacingMetric,
     )
     from ema_workbench.em_framework.optimization import to_problem
-    
-    problem = to_problem(model, searchover="levers")
+    # Create a new list of outcomes excluding INFO (0)  kind
+    new_outcomes = [o for o in model.outcomes if o.kind!=0]
+    problem_model = model
+    problem_model.outcomes=new_outcomes
+    problem = to_problem(problem_model, searchover="levers")
     
     results_epsilon=[results_final]
     #reference_set = epsilon_nondominated((results_epsilon), epsilons, problem) #Not required since results are already non-dominated solutions. This is just required if solutions merged from multiple random seeds are used
@@ -63,27 +66,31 @@ if metrics:
     sm = SpacingMetric(problem)
     #%%Compute and visualize metrics
     metrics_by_seed = []
-    n_archives=3
+    n_archives=len
     
     for archives in all_archives:
         metrics = []
         counter=0
         for nfe, archive in archives.items():
-            if counter <n_archives:
-                print(nfe)
-                scores = {
-                    
-                    "generational_distance": gd.calculate(archive),
-                    "hypervolume": hv.calculate(archive),
-                    "epsilon_indicator": ei.calculate(archive),
-                    "inverted_gd": ig.calculate(archive),
-                    "spacing": sm.calculate(archive),
-                    "nfe": int(nfe),
-                }
-                metrics.append(scores)
-                counter=counter+1
-            else:
-                break
+            #Remove archive columns with INFO outcomes
+            for outcome in model.outcomes:
+                if (outcome.kind == 0) & (outcome in archive.columns) : #0 means INFO
+                    archive = archive.drop(columns=[outcome.name])
+            #if counter <n_archives:
+            print("Generation: " + str(counter)+", nfe: "+str(nfe)+", # solutions: "+str(len(archive)))
+            scores = {
+                
+                "generational_distance": gd.calculate(archive),
+                "hypervolume": hv.calculate(archive),
+                "epsilon_indicator": ei.calculate(archive),
+                "inverted_gd": ig.calculate(archive),
+                "spacing": sm.calculate(archive),
+                "nfe": int(nfe),
+            }
+            metrics.append(scores)
+            counter=counter+1
+            # else:
+            #     break
         metrics = pd.DataFrame.from_dict(metrics)
     
         # sort metrics by number of function evaluations
