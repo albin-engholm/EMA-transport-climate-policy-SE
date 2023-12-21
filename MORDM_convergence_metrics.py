@@ -22,9 +22,9 @@ import seaborn as sns
 #policy_types=["All levers", "No transport efficient society"]
 # policy_types=["No transport efficient society"]#,
 policy_types = ["All levers"]
-date = '2023-12-11'  # Specify date the MORDM MOEA was started
+date = '2023-12-12'  # Specify date the MORDM MOEA was started
 date_archive = date
-nfe_MOEA = 100000  # Specify the number of nfes used for the MORDM MOEA
+nfe_MOEA = 250000  # Specify the number of nfes used for the MORDM MOEA
 
 all_archives = []
 
@@ -95,8 +95,8 @@ for policy_type in policy_types:
             metrics.append(scores)
             counter = counter+1
             #  Use break below if testing on a sub-set of generations
-            # if counter > 4:
-            #     break
+            if counter > 10:
+                break
         metrics = pd.DataFrame.from_dict(metrics)
 
         # sort metrics by number of function evaluations
@@ -110,6 +110,8 @@ for policy_type in policy_types:
     #  Load convergence metrics dataframe
     metrics = pickle.load(
         open(f"./output_data/{str(nfe_MOEA)}_{policy_type}_{date_archive}_convergence_metrics.p", "rb"))
+    if isinstance(metrics, list) and len(metrics) > 0:
+        metrics = metrics[0]
 
     import seaborn as sns  # Import seaborn again if only doing the visualization
     sns.set_style("white")

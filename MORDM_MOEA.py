@@ -37,7 +37,7 @@ if __name__ == "__main__":
     load_diverse_scenarios = False  # Should a pre-generated set of diverse scenarios be loaded and used as reference?
 
     n_p = 8  # set # of parallel threads
-    nfe = 300000  # Set number of nfes  in optimization
+    nfe = 10000  # Set number of nfes  in optimization
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
     #policy_types=["All levers", "No transport efficient society"]
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     # Optimization parameters
     # Set epsilons
-    epsilons = [.2, 1, 0.1, 0.1]  # Epsilons for M2-M5
+    epsilons = [.75, 5, 0.25, 0.25]  # Epsilons for M2-M5
 
     # Create instances of the crossover and mutation operators
     crossover = SBX(probability=1, distribution_index=20)
