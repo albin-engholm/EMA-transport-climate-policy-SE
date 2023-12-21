@@ -16,7 +16,7 @@ if __name__ == "__main__":
     import pandas as pd
     df_full = pd.DataFrame()
     policy_types = ["All levers", "No transport efficient society"]
-    #policy_types=["All levers"]#,"No transport efficient society"]
+    policy_types=["All levers"]#,"No transport efficient society"]
     load_results = 1
     if load_results == 1:
         
@@ -24,8 +24,8 @@ if __name__ == "__main__":
         count = 0
         for policy_type in policy_types:
             if count == 0:
-                date = "2023-11-10"
-                nfe = 500000
+                date = "2023-12-07"
+                nfe = 50000
                 t1 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
@@ -123,8 +123,7 @@ if __name__ == "__main__":
     candidate_policies = []
     for i, policy in candidate_policy_data.iterrows():
         candidate_policies.append(Policy(str(i), **policy.to_dict()))
-        
-
+    
         # %% Add other interesting outcomes to calculate
 
     model.outcomes = [
@@ -182,6 +181,7 @@ if __name__ == "__main__":
     tic = time.perf_counter()
     results_list_OE=[]
     uncertainty_sets=["X","XP"]
+    uncertainty_sets=["XP"]
     for uncertainty_set in uncertainty_sets:
         if uncertainty_set=="X":
             mid_case = {
@@ -246,7 +246,7 @@ if __name__ == "__main__":
         reference = Scenario("Reference", **mid_case)
         scenario_list.append(reference)
         # Sample additional scenarios
-        nr_scenarios = 500  # select number of scenarios (per policy)
+        nr_scenarios = 50  # select number of scenarios (per policy)
         scenarios = samplers.sample_uncertainties(model, nr_scenarios, sampler=samplers.LHSSampler())
         # Create scenario objects of the sampled scenarios and add to scenarioset
         for i in range(nr_scenarios):

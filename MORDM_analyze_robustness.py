@@ -16,8 +16,8 @@ load_results = 1
 load_results = 1
 if load_results == 1:
     from ema_workbench import load_results
-    date = "2023-11-15"
-    n_scenarios = 500
+    date = "2023-12-07"
+    n_scenarios = 50
     # for policy_type in policy_types:
     t1 = './output_data/'+"X_XP"+str(n_scenarios)+'_scenarios_MORDM_OE_'+date+".p"
     # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
