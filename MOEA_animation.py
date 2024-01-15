@@ -65,7 +65,7 @@ def animate(i):
 ani = animation.FuncAnimation(fig, animate, frames=len(dataframes), interval=200, repeat=True)
 
 # Save the animation
-ani.save('animation'+file_str+'.gif', writer='Pillow', fps=10, dpi=dpi)
+ani.save('./figs/animation'+file_str+'.gif', writer='Pillow', fps=10, dpi=dpi)
 
 # Create a new figure and axes for the static plot
 fig_static, ax_static = plt.subplots()
@@ -85,7 +85,7 @@ ax_static.set_ylabel(y_var)
 
 
 # Save the figure
-plt.savefig('MOEA_final_solutions.png', dpi=dpi)
+plt.savefig('./figs/MOEA_final_solutions.png', dpi=dpi)
 
 # Optionally, show the plot
 plt.show()

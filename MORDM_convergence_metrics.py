@@ -104,7 +104,7 @@ for policy_type in policy_types:
     #  Save convergence metrics dataframe to file
     if len(metrics) > 0:
         pickle.dump(metrics,
-                    open(f"./output_data/{str(nfe_MOEA)}_{policy_type}_{date_archive}_convergence_metrics.p", "wb"))
+                    open(f"./output_data/moea_results/{str(nfe_MOEA)}_{policy_type}_{date_archive}_convergence_metrics.p", "wb"))
 # %% visualize metrics
 for policy_type in policy_types:
     #  Load convergence metrics dataframe
@@ -112,7 +112,7 @@ for policy_type in policy_types:
     import seaborn as sns
     import matplotlib.pyplot as plt
     metrics = pickle.load(
-        open(f"./output_data/{str(nfe_MOEA)}_{policy_type}_{date_archive}_convergence_metrics.p", "rb"))
+        open(f"./output_data/moea_results/{str(nfe_MOEA)}_{policy_type}_{date_archive}_convergence_metrics.p", "rb"))
     if isinstance(metrics, list) and len(metrics) > 0:
         metrics = metrics[0]
     # Exclude the first and last rows

@@ -292,10 +292,9 @@ if __name__ == "__main__":
         # Save results to file?
         save_files = True
         if save_files is True:
-
-            filename = str(nfe)+'_nfe_directed_search_MORDM_'+str(date)
-            filename1 = policy_type+filename+'.p'
+            filename = f"{policy_type}{nfe}_nfe_directed_search_MORDM_{date}(nfe)+'_nfe_directed_search_MORDM_'+str(date)"
+            filename1 = filename+'.p'
             pickle.dump([results_list, convergence_list, df_scenarios, epsilons], open(
-                "./output_data/"+filename1, "wb"))
-            filename2 = policy_type+filename+'model_'+".p"
-            pickle.dump(model, open("./output_data/"+filename2, "wb"))
+                "./output_data/moea_results/"+filename1, "wb"))
+            filename2 = filename+'model_'+".p"
+            pickle.dump(model, open("./output_data/moea_results/"+filename2, "wb"))

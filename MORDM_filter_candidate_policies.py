@@ -25,12 +25,12 @@ if __name__ == "__main__":
         nfe = 1000000
         for idx, policy_type in enumerate(policy_types):
             if idx == 0:
-                t1 = f'./output_data/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p'
+                t1 = f'./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p'
                 # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
-                t2 = f'./output_data/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}model_.p'
+                t2 = f'./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}model_.p'
                 model = pickle.load(open(t2, "rb"))
                 scenario_count = 0
                 for results in results_list:
@@ -41,12 +41,12 @@ if __name__ == "__main__":
             if idx == 1:
                 date = "2023-12-28"
                 nfe = 1000000
-                t1 = f"./output_data/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
+                t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
-                t2 = f'./output_data/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}model_.p'
+                t2 = f'./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}model_.p'
                 model = pickle.load(open(t2, "rb"))
                 for results in results_list:
                     results["Policy type"] = policy_type
@@ -589,5 +589,6 @@ if __name__ == "__main__":
 
     df_candidate_policies = pd.concat([df_candidate_policies_sampled, df_trv], join="inner", axis=0)
     # %% Save the dataframe with candidate policies
-    filename = date+"_"+str(nfe)+"candidate_policies"+".p"
-    pickle.dump(df_candidate_policies, open("./output_data/"+filename, "wb"))
+    #filename = date+"_"+str(nfe)+"candidate_policies"+".p"
+    filename = f"{date}_{nfe}candidate_policies.p"
+    pickle.dump(df_candidate_policies, open("./output_data/candidate_policies/"+filename, "wb"))

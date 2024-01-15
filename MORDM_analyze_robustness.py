@@ -5,8 +5,7 @@ Created on Mon Jun 12 14:18:42 2023
 @author: aengholm
 """
 from ema_workbench.analysis import feature_scoring
-from matplotlib_venn import venn3
-from matplotlib_venn import venn2
+
 from ema_workbench.analysis import prim
 from matplotlib.patches import Patch
 from ema_workbench.analysis import parcoords
@@ -19,7 +18,8 @@ import pickle
 import math
 
 policy_types = ["All levers", "No transport efficient society"]
-# policy_types=["All levers"]#,"No transport efficient society"]
+# policy_types=["All levers"]
+# ,"No transport efficient society"]
 load_results = 1
 load_results = 1
 if load_results == 1:
@@ -27,8 +27,7 @@ if load_results == 1:
     date = "2024-01-05"
     n_scenarios = 2100
     # for policy_type in policy_types:
-    t1 = './output_data/'+"X_XP"+str(n_scenarios)+'_scenarios_MORDM_OE_'+date+".p"
-    # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
+    t1 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}.p"
 
     data = pickle.load(open(t1, "rb"))
     if len(data) > 1:
@@ -50,12 +49,8 @@ if load_results == 1:
         df_outcomes = pd.DataFrame(outcomes_xp).reset_index(drop=True)
         experiments = experiments_xp
     #experiments, outcomes = pickle.load(open(t1, "rb"))
-    t2 = './output_data/'+str(n_scenarios) + \
-        '_scenarios_MORDM_OE_'+date+"model_.p"
+    t2 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}model_.p"
     model = pickle.load(open(t2, "rb"))
-    # results = load_results(t1+'.tar.gz')
-    # experiments=results[0]
-    # outcomes=results[1]
 
     # DF with both experiments and outcomes
     df_full = pd.concat([experiments, df_outcomes], axis=1, join="inner")
@@ -112,7 +107,7 @@ parcoords_fig.set_size_inches(10, 10)
 paraxes.legend()
 
 # Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
-parcoords_fig.savefig("parcoords_candidate_policies_reference_outcomes.png",
+parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_outcomes.png",
                       dpi=300, format="png", bbox_inches="tight", transparent=True)
 # Pairplot outcomes on outcomes
 sns.pairplot(data=df_reference_subset, x_vars=outcomes, y_vars=outcomes,
@@ -150,7 +145,7 @@ parcoords_fig.set_size_inches(10, 10)
 paraxes.legend()
 
 # Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
-parcoords_fig.savefig("parcoords_candidate_policies_reference_levers.png",
+parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_levers.png",
                       dpi=300, format="png", bbox_inches="tight", transparent=True)
 
 # If you want to show the plot, you would now use
@@ -647,7 +642,8 @@ for metric in metrics:
     # paraxes.legend()
 
     # Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
-    parcoords_fig.savefig("robustness metrics.png", dpi=500, format="png", bbox_inches="tight", transparent=True)
+    parcoords_fig.savefig("./figs/robustness metrics.png", dpi=500,
+                          format="png", bbox_inches="tight", transparent=True)
     plt.show()
 plt.rcParams["figure.figsize"] = original_figsize
 
@@ -888,8 +884,6 @@ for index, row in df_policy_vulnerabilities.iterrows():
 
 
 # %% Scatterplot of coverage and density
-
-
 # Plotting the scatterplot with the specified color coding
 plt.figure(figsize=(10, 6))
 sns.set_style("white")
@@ -945,33 +939,4 @@ y = outcomes_xp
 
 fs = feature_scoring.get_feature_scores_all(x, y)
 sns.heatmap(fs, cmap="viridis", annot=True)
-plt.show()
-
-
-# %% Parcoords of policies
-
-
-# Get the limits from lever ranges
-levers = ['L1_bio_share_diesel', 'L2_bio_share_gasoline', 'L3_additional_car_energy_efficiency', 'L4_additional_truck_energy_efficiency', 'L5_fuel_tax_increase_gasoline',
-          'L6_fuel_tax_increase_diesel', 'L7_km_tax_cars', 'L8_km_tax_trucks', 'L9_transport_efficient_planning_cars', 'L10_transport_efficient_planning_trucks']  # Get levers
-limits_levers = pd.DataFrame()  # Create a dataframe for lever-based limits
-for item in levers:
-    limits_levers.loc[0, item] = min(df_full[item])  # Get lower bound
-    limits_levers.loc[1, item] = max(df_full[item])  # Get upper bound
-
-limits = limits_levers
-
-# Filter the data for the specific policy type
-final_policies = policy_metrics_df.loc[overlapped_policies]["policy"]  # as Policy ID
-filtered_data = df_full[df_full["policy"].isin(final_policies)]
-
-
-# Create the parallel coordinates plot for the filtered data
-paraxes = parcoords.ParallelAxes(limits_levers)
-paraxes.plot(filtered_data)
-
-# Set the title to the policy type
-
-
-# Show the plot
 plt.show()

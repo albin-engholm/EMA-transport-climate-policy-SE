@@ -41,7 +41,7 @@ if load_results == 1:
     from ema_workbench import load_results
 
     ### USER INPUT ###
-    t1 = "./output_data/2048_SOBOL_uncertainties_2024-01-05"
+    t1 = "./output_data/sobol_results/2048_SOBOL_uncertainties_2024-01-05"
     results = pickle.load(open(t1+".p", "rb"))
     #results = load_results(t1+'.tar.gz')
     experiments = results[0]
@@ -86,7 +86,7 @@ fig.set_size_inches(16, 12)
 fig.subplots_adjust(bottom=0.3)
 plt.show()
 
-# %% Create heatmap of sobol indices
+# %% Create bar chart and heatmap of sobol indices
 only_objectives_heatmap = True
 if only_objectives_heatmap:
     all_outcomes = model.outcomes.keys()
@@ -120,7 +120,7 @@ plt.ylabel('Parameters')
 plt.show()
 
 
-# %%
+# %% Plot results for each outcome
 threshold = 0.01
 Si_df["ub_ST"] = Si_df["ST"]+Si_df["ST_conf"]
 Si_df["ub_S1"] = Si_df["S1"]+Si_df["S1_conf"]

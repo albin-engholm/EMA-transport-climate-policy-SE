@@ -25,14 +25,11 @@ if __name__ == "__main__":
             if count == 0:
                 date = "2023-12-30"
                 nfe = 1000000
-                t1 = './output_data/'+policy_type + \
-                    str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
-               # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
+                t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
-                t2 = './output_data/'+policy_type + \
-                    str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
+                t2 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}model_.p"
                 model = pickle.load(open(t2, "rb"))
                 scenario_count = 0
                 for results in results_list:
@@ -43,14 +40,11 @@ if __name__ == "__main__":
             if count == 1:
                 date = "2023-12-28"
                 nfe = 1000000
-                t1 = './output_data/'+policy_type + \
-                    str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
-               # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
+                t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
-                t2 = './output_data/'+policy_type + \
-                    str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
+                t2 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}model_.p"
                 model = pickle.load(open(t2, "rb"))
                 for results in results_list:
                     results["Policy type"] = policy_type
@@ -60,11 +54,10 @@ if __name__ == "__main__":
         # Load candidate policy dataframe
         date = "2023-12-28"
         nfe = 1000000
-        filename = date+"_"+str(nfe)+"candidate_policies"+".p"
-        candidate_policy_data = pickle.load(open("./output_data/"+filename, "rb"))
+        filename = f"./output_data/candidate_policies/{date}_{nfe}candidate_policies.p"
+        candidate_policy_data = pickle.load(open(filename, "rb"))
 
-    # The model object already contains all information about levers and uncertainties, so no need to specify these things again
-
+    # The model object already contains all information about levers and uncertainties
     # Set transport efficient society to 0 for No transport efficient society solutions
     candidate_policy_data.loc[candidate_policy_data['L9_transport_efficient_planning_cars']
                               < 0.005, 'L9_transport_efficient_planning_cars'] = 0
@@ -222,28 +215,24 @@ if __name__ == "__main__":
         for policy in experiments["policy"]:
             # if policy not in policy_names_trv
             if policy not in policy_names_trv:
-                # print(policy)
                 policy_type_list.append(candidate_policy_data.at[int(policy), "Policy type"])
             else:
-                # print(policy)
                 policy_type_list.append(candidate_policy_data.at[policy, "Policy type"])
             count = count+1
         experiments["Policy type"] = policy_type_list
 
         results = [outcomes, experiments]
         results_list_OE.append(results)
-        # %%
+        # %% Save results
     save_results = 1
     if save_results == 1:
         from datetime import date
         from ema_workbench import save_results
-
+        filename_output = f"{nr_scenarios}_scenarios_MORDM_OE_{date.today()}"
         filename = str(nr_scenarios)+'_scenarios_MORDM_OE_'+str(date.today())
-
         filename1 = filename+'.p'
-        #save_results(results, "./output_data/"+filename1)
-        pickle.dump([experiments, outcomes], open("./output_data/"+filename1, "wb"))
+        pickle.dump([experiments, outcomes], open("./output_data/robustness_analysis_results/"+filename1, "wb"))
         import pickle
         filename2 = filename+'model_'+".p"
         pickle.dump(model, open("./output_data/"+filename2, "wb"))
-        pickle.dump([results_list_OE], open("./output_data/"+"X_XP"+filename1, "wb"))
+        pickle.dump([results_list_OE], open("./output_data/robustness_analysis_results/"+"X_XP"+filename1, "wb"))

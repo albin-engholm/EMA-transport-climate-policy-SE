@@ -27,14 +27,15 @@ if __name__ == "__main__":
 
 # Load model
     import pickle
-    model = pickle.load(open("./output_data/2100_scenarios_MORDM_OE_2024-01-05model_.p", "rb"))
+    model = pickle.load(
+        open("./output_data/robustness_analysis_results/2100_scenarios_MORDM_OE_2024-01-05model_.p", "rb"))
 
 # Load candidate policies
     # Load candidate policy dataframe
     date = "2023-12-28"
     nfe = 1000000
-    filename = date+"_"+str(nfe)+"candidate_policies"+".p"
-    candidate_policy_data = pickle.load(open("./output_data/"+filename, "rb"))
+    filename = f"{date}_{nfe}candidate_policies.p"
+    candidate_policy_data = pickle.load(open("./output_data/candidate_policies/"+filename, "rb"))
 # %% Specify whether to search over levers or uncertainties
     search_over = "uncertainties"
 
@@ -74,12 +75,11 @@ if __name__ == "__main__":
        # Create the reference scenario
 
         reference = Scenario("Reference", **reference_scenario)
-# %% Run SOBOL sampling
-# Simulation settings
+# %% Speicify and run SOBOL sampling
     n_sobol = 1
+    # The number of experiments = N*(p*2+2) where N is n_samples, p is number of decision variables
     n_samples = int(1024*2)  # select number of scenarios (per policy)
     n_p = 8
-    # The number of experiments = N*(p*2+2) where N is n_samples, p is len(levers)
     # Run
     import time
     tic = time.perf_counter()
@@ -111,6 +111,6 @@ if __name__ == "__main__":
         from ema_workbench import save_results
         filename = str(n_samples)+"_SOBOL_"+str(search_over)+"_"+str(date.today())
         filename1 = filename+'.tar.gz'
-        pickle.dump([experiments, outcomes], open("./output_data/"+filename+".p", "wb"))
-        pickle.dump(model, open("./output_data/"+filename+"model_"+".p", "wb"))
+        pickle.dump([experiments, outcomes], open("./output_data/sobol_results/"+filename+".p", "wb"))
+        pickle.dump(model, open("./output_data/sobol_results/"+filename+"model_"+".p", "wb"))
         #save_results([experiments,outcomes], "./output_data/"+filename1)
