@@ -11,15 +11,16 @@ from ema_workbench import (RealParameter, CategoricalParameter,
                            ScalarOutcome, ema_logging,
                            perform_experiments, Constant,
                            Scenario, Constraint,
-                           ema_logging, save_results)
+                           ema_logging, save_results,
+                           MultiprocessingEvaluator)
 from ema_workbench.em_framework import samplers
 from ema_workbench.em_framework.optimization import (
     EpsilonProgress, ArchiveLogger)
-from ema_workbench.em_framework.evaluators import MultiprocessingEvaluator
 from ema_workbench.connectors.excel import ExcelModel
 from platypus import SBX, PM, GAOperator
 import matplotlib.pyplot as plt
 from datetime import date
+import time
 import pandas as pd
 import pickle
 # %% Specify model and optimization parameters
@@ -37,16 +38,17 @@ if __name__ == "__main__":
     load_diverse_scenarios = False  # Should a pre-generated set of diverse scenarios be loaded and used as reference?
 
     n_p = 8  # set # of parallel threads
-    nfe = 10000  # Set number of nfes  in optimization
+    nfe = 1000000  # Set number of nfes  in optimization
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
     #policy_types=["All levers", "No transport efficient society"]
-    #policy_types=["No transport efficient society"]
+    #policy_types = ["No transport efficient society"]
     policy_types = ["All levers"]
 
     # Optimization parameters
     # Set epsilons
-    epsilons = [.75, 5, 0.25, 0.25]  # Epsilons for M2-M5
+    # Epsilons for M2-M5, 5% of range in pilot run M2 range ~14, M3 range 82, m4 range 11, m5 range 3
+    epsilons = [.75, 4, 0.55, 0.15]
 
     # Create instances of the crossover and mutation operators
     crossover = SBX(probability=1, distribution_index=20)
@@ -178,7 +180,7 @@ if __name__ == "__main__":
     #                                           function=lambda y : max(0, y-bio_target))]
 
 # %% Run MOEA for each policy type and scenario
-    tic = date.time.perf_counter()
+    tic = time.perf_counter()
     # TODO add support for reading model object depending on what policy types should be used
     for policy_type in policy_types:
         results_list = []  # List to store different sets of results
@@ -283,7 +285,7 @@ if __name__ == "__main__":
         results_list.append(results)
         convergence_list.append(convergence)
 
-        toc = date.time.perf_counter()
+        toc = time.perf_counter()
         print("Runtime [s] = " + str(toc-tic))
         print("Runtime [h] = " + str(round((toc-tic)/3600, 1)))
 

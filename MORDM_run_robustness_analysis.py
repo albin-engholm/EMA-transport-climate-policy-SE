@@ -6,7 +6,7 @@ Created on Mon Jun 12 14:18:42 2023
 """
 from ema_workbench import (RealParameter, CategoricalParameter,
                            ScalarOutcome, ema_logging,
-                           perform_experiments, Constant,Policy)
+                           perform_experiments, Constant, Policy)
 
 from ema_workbench.connectors.excel import ExcelModel
 from ema_workbench.em_framework.evaluators import MultiprocessingEvaluator
@@ -16,21 +16,20 @@ if __name__ == "__main__":
     import pandas as pd
     df_full = pd.DataFrame()
     policy_types = ["All levers", "No transport efficient society"]
-    policy_types=["All levers"]#,"No transport efficient society"]
+    # policy_types = ["All levers"]  # ,"No transport efficient society"]
     load_results = 1
     if load_results == 1:
-        
-        
+
         count = 0
         for policy_type in policy_types:
             if count == 0:
-                date = "2023-12-07"
-                nfe = 50000
+                date = "2023-12-30"
+                nfe = 1000000
                 t1 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
-                results_list, convergence, scenarios , epsilons= pickle.load(
+                results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
                 t2 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
@@ -42,8 +41,8 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if count == 1:
-                date = "2023-11-14"
-                nfe = 150000
+                date = "2023-12-28"
+                nfe = 1000000
                 t1 = './output_data/'+policy_type + \
                     str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
@@ -57,73 +56,26 @@ if __name__ == "__main__":
                     results["Policy type"] = policy_type
                     df_full = pd.concat([df_full, results], ignore_index=True)
             count = count+1
-            
-        #Load candidate policy dataframe
-        date = "2023-11-14"
-        nfe = 150000
-        filename=date+"_"+str(nfe)+"candidate_policies"+".p"    
+
+        # Load candidate policy dataframe
+        date = "2023-12-28"
+        nfe = 1000000
+        filename = date+"_"+str(nfe)+"candidate_policies"+".p"
         candidate_policy_data = pickle.load(open("./output_data/"+filename, "rb"))
 
     # The model object already contains all information about levers and uncertainties, so no need to specify these things again
 
-    
+    # Set transport efficient society to 0 for No transport efficient society solutions
+    candidate_policy_data.loc[candidate_policy_data['L9_transport_efficient_planning_cars']
+                              < 0.005, 'L9_transport_efficient_planning_cars'] = 0
+    candidate_policy_data.loc[candidate_policy_data['L10_transport_efficient_planning_trucks']
+                              < 0.005, 'L10_transport_efficient_planning_trucks'] = 0
 
-#%% include trv policies
-
-    keys_trv = [
-       'L3_additional_car_energy_efficiency',
-       'L4_additional_truck_energy_efficiency',
-       'L6_fuel_tax_increase_diesel',
-       'L5_fuel_tax_increase_gasoline', 
-       'L1_bio_share_diesel', 
-       'L2_bio_share_gasoline',
-       'L9_transport_efficient_planning_cars',
-       'L10_transport_efficient_planning_trucks',
-       'L7_km_tax_cars', 
-       'L8_km_tax_trucks'
-       ]
-
-    policy1 = (0, 0,  .02, .02, .698, .728,  0, 0, 0, 0)
-    policy2 = (0, 0,  .09, .09, .59, .62, 0, 0, 0, 0)
-    policy3 = (0, 0,  .05, .05, .61, .64, 0, 0, 1, 2)
-    policy4 = (0, 0,  .097, .097, .48, .51, 0, 0, 1, 2)
-    policy5 = (0, 0,  .12, .12, .41, .44, 0, 0, 0, 0)
-    policy6 = (0.05, 0.05,  .031, .031, .65, .65, .10, .050, .50, 1)
-    policy7 = (.05, .05,  .092, .092, .495, .525, .10, .050, .50, 1)
-    policy8 = (.05, .05,  .063, .063, .508, .538, .26, .17, .50, 1)
-    policy9 = (0, 0,  .02, .02, .32, 0.075, 0, 0, 0, 0)
-    
-    # Create a list of all policies
-    all_policies_trv = [policy1, policy2, policy3, policy4, policy5, policy6, policy7, policy8, policy9]
-    
-    # Create a list of policy names
-    policy_names_trv = ['B', 'C1', 'C2', 'C3', 'C4', 'D1', 'D2', 'D3', 'Reference policy']
-    
-    # Now create the list of dictionaries
-    policies_trv = [{name: dict(zip(keys_trv, policy))} for name, policy in zip(policy_names_trv, all_policies_trv)]
-    import pandas as pd
-
-    # Flatten the list of dictionaries into a single dictionary
-    flattened_policies_trv = {name: dict(zip(keys_trv, policy)) for name, policy in zip(policy_names_trv, all_policies_trv)}
-    
-    # Convert the dictionary to a pandas DataFrame
-    df_trv = pd.DataFrame.from_records(flattened_policies_trv).T
-    df_trv["Policy type"] ="Trv"
-    
-    print(df_trv)
-    
-        
-    candidate_policy_data = pd.concat([candidate_policy_data, df_trv], ignore_index=False)
-
-    candidate_policy_data.loc[candidate_policy_data['L9_transport_efficient_planning_cars'] < 0.005, 'L9_transport_efficient_planning_cars'] = 0
-    candidate_policy_data.loc[candidate_policy_data['L10_transport_efficient_planning_trucks'] < 0.005, 'L10_transport_efficient_planning_trucks'] = 0
-
-
-    #%% Create a list of all policies
+    # %% Create a list of all policies
     candidate_policies = []
     for i, policy in candidate_policy_data.iterrows():
         candidate_policies.append(Policy(str(i), **policy.to_dict()))
-    
+
         # %% Add other interesting outcomes to calculate
 
     model.outcomes = [
@@ -174,16 +126,16 @@ if __name__ == "__main__":
     ]
 
     # scenarios=[scenarios,reference]
-    #%% Set up two runs for various uncertainty parameters #Run model - for open exploration
+    # %% Set up two runs for various uncertainty parameters #Run model - for open exploration
     n_p = 8
     # Run
     import time
     tic = time.perf_counter()
-    results_list_OE=[]
-    uncertainty_sets=["X","XP"]
-    uncertainty_sets=["XP"]
+    results_list_OE = []
+    uncertainty_sets = ["X", "XP"]
+    uncertainty_sets = ["XP"]
     for uncertainty_set in uncertainty_sets:
-        if uncertainty_set=="X":
+        if uncertainty_set == "X":
             mid_case = {
                 "X1_car_demand": 0,
                 "X2_truck_demand": 0,
@@ -201,16 +153,16 @@ if __name__ == "__main__":
                 "X14_driverless_truck_energy_efficiency": 0,
                 "X15_VKT_per_driverless_truck": 0
             }
-        if uncertainty_set=="XP":
+        if uncertainty_set == "XP":
 
             # Add P parameters
             model.uncertainties = [
-                RealParameter("R1_fuel_price_to_car_electrification",0.1,0.4,variable_name="C19"),
-                RealParameter("R2_fuel_price_to_truck_electrification",0,0.5,variable_name="C22"),
-                RealParameter("R3_fuel_price_to_car_fuel_consumption",-.15,-0.05,variable_name="C24"),
-                RealParameter("R4_car_driving_cost_to_car_ownership",-0.2,-0.1,variable_name="C20"),
-                RealParameter("R5_car_driving_cost_to_car_VKT",-0.4,-0.1,variable_name="C21"),
-                RealParameter("R6_truck_driving_cost_to_truck_VKT",-1.2,-0.2,variable_name="C22")]
+                RealParameter("R1_fuel_price_to_car_electrification", 0.1, 0.4, variable_name="C19"),
+                RealParameter("R2_fuel_price_to_truck_electrification", 0, 0.5, variable_name="C22"),
+                RealParameter("R3_fuel_price_to_car_fuel_consumption", -.15, -0.05, variable_name="C24"),
+                RealParameter("R4_car_driving_cost_to_car_ownership", -0.2, -0.1, variable_name="C20"),
+                RealParameter("R5_car_driving_cost_to_car_VKT", -0.4, -0.1, variable_name="C21"),
+                RealParameter("R6_truck_driving_cost_to_truck_VKT", -1.2, -0.2, variable_name="C22")]
             mid_case = {
                 "X1_car_demand": 0,
                 "X2_truck_demand": 0,
@@ -227,12 +179,12 @@ if __name__ == "__main__":
                 "X13_driverless_truck_driving_costs": 0,
                 "X14_driverless_truck_energy_efficiency": 0,
                 "X15_VKT_per_driverless_truck": 0,
-                "R1_fuel_price_to_car_electrification" : 0.19,
-                "R2_fuel_price_to_truck_electrification" : 0,
-                "R3_fuel_price_to_car_fuel_consumption" : -0.05,
-                "R4_car_driving_cost_to_car_ownership" : -0.1,
-                "R5_car_driving_cost_to_car_VKT" : -0.2,
-                "R6_truck_driving_cost_to_truck_VKT" : -0.9
+                "R1_fuel_price_to_car_electrification": 0.19,
+                "R2_fuel_price_to_truck_electrification": 0,
+                "R3_fuel_price_to_car_fuel_consumption": -0.05,
+                "R4_car_driving_cost_to_car_ownership": -0.1,
+                "R5_car_driving_cost_to_car_VKT": -0.2,
+                "R6_truck_driving_cost_to_truck_VKT": -1.14
             }
 
         #  Generate scenarios to  explore
@@ -242,41 +194,43 @@ if __name__ == "__main__":
         # Create the reference scenario and add to scenario list
 
         scenario_list = []
-        
+
         reference = Scenario("Reference", **mid_case)
         scenario_list.append(reference)
         # Sample additional scenarios
-        nr_scenarios = 50  # select number of scenarios (per policy)
+        nr_scenarios_per_uncertainty = 100
+        nr_scenarios = nr_scenarios_per_uncertainty * \
+            len(model.uncertainties.keys())  # select number of scenarios (per policy)
         scenarios = samplers.sample_uncertainties(model, nr_scenarios, sampler=samplers.LHSSampler())
         # Create scenario objects of the sampled scenarios and add to scenarioset
         for i in range(nr_scenarios):
             s_dict = {k: v for k, v in zip(scenarios.params, scenarios.designs[i])}
             scenario_list.append(Scenario(str(i), **s_dict))
-          
-            
+
         with MultiprocessingEvaluator(msis=model, n_processes=n_p) as evaluator:
-            experiments,outcomes = perform_experiments(model,
+            experiments, outcomes = perform_experiments(model,
                                                         scenarios=scenario_list,
                                                         evaluator=evaluator,
                                                         policies=candidate_policies)
-            
+
          #  Add policy type to experiments
-        experiments_backup=experiments.copy()   
-        experiments=experiments_backup
+        experiments_backup = experiments.copy()
+        experiments = experiments_backup
         count = 0
-        policy_type_list=[]
+        policy_type_list = []
+        policy_names_trv = list(candidate_policy_data[candidate_policy_data["Policy type"] == "Trv"].index)
         for policy in experiments["policy"]:
-            #if policy not in policy_names_trv
-            if policy not in policy_names_trv: 
-                #print(policy)
+            # if policy not in policy_names_trv
+            if policy not in policy_names_trv:
+                # print(policy)
                 policy_type_list.append(candidate_policy_data.at[int(policy), "Policy type"])
             else:
-                #print(policy)
+                # print(policy)
                 policy_type_list.append(candidate_policy_data.at[policy, "Policy type"])
             count = count+1
-        experiments["Policy type"]=policy_type_list
-           
-        results=[outcomes,experiments]
+        experiments["Policy type"] = policy_type_list
+
+        results = [outcomes, experiments]
         results_list_OE.append(results)
         # %%
     save_results = 1
@@ -292,4 +246,4 @@ if __name__ == "__main__":
         import pickle
         filename2 = filename+'model_'+".p"
         pickle.dump(model, open("./output_data/"+filename2, "wb"))
-        pickle.dump([results_list_OE],open("./output_data/"+"X_XP"+filename1,"wb"))
+        pickle.dump([results_list_OE], open("./output_data/"+"X_XP"+filename1, "wb"))

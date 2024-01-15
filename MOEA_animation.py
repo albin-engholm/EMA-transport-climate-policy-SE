@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 # Load the data
-file_str = "300000_All levers_2023-12-17"
+file_str = "1000000_All levers_2023-12-30"
 archives = ArchiveLogger.load_archives("./archives_animation/"+file_str+".tar.gz")
 
 dpi = 150

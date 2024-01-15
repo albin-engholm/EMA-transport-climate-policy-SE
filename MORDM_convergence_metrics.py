@@ -5,6 +5,7 @@ A script for computing and visualizing MOEA convergence metrics
 @author: aengholm
 """
 
+import seaborn as sns  # Import seaborn again if only doing the visualization
 from ema_workbench.em_framework.optimization import (ArchiveLogger)
 from ema_workbench import (
     HypervolumeMetric,
@@ -20,11 +21,11 @@ import seaborn as sns
 # %% Load and prepare data
 
 #policy_types=["All levers", "No transport efficient society"]
-# policy_types=["No transport efficient society"]#,
+# policy_types = ["No transport efficient society"]  # ,
 policy_types = ["All levers"]
-date = '2023-12-12'  # Specify date the MORDM MOEA was started
+date = '2023-12-30'  # Specify date the MORDM MOEA was started
 date_archive = date
-nfe_MOEA = 250000  # Specify the number of nfes used for the MORDM MOEA
+nfe_MOEA = 1000000  # Specify the number of nfes used for the MORDM MOEA
 
 all_archives = []
 
@@ -64,7 +65,6 @@ for policy_type in policy_types:
     ig = InvertedGenerationalDistanceMetric(reference_set, problem, d=1)
     sm = SpacingMetric(problem)
     # %%Compute metrics for each archive
-
     metrics = []
     for archives in all_archives:
         counter = 0
@@ -95,8 +95,8 @@ for policy_type in policy_types:
             metrics.append(scores)
             counter = counter+1
             #  Use break below if testing on a sub-set of generations
-            if counter > 10:
-                break
+            # if counter > 10:
+            #     break
         metrics = pd.DataFrame.from_dict(metrics)
 
         # sort metrics by number of function evaluations
@@ -108,12 +108,16 @@ for policy_type in policy_types:
 # %% visualize metrics
 for policy_type in policy_types:
     #  Load convergence metrics dataframe
+    import pickle
+    import seaborn as sns
+    import matplotlib.pyplot as plt
     metrics = pickle.load(
         open(f"./output_data/{str(nfe_MOEA)}_{policy_type}_{date_archive}_convergence_metrics.p", "rb"))
     if isinstance(metrics, list) and len(metrics) > 0:
         metrics = metrics[0]
+    # Exclude the first and last rows
+    metrics = metrics.iloc[1:-1]
 
-    import seaborn as sns  # Import seaborn again if only doing the visualization
     sns.set_style("white")
     fig, axes = plt.subplots(nrows=6, figsize=(8, 12), sharex=True)
 
@@ -140,5 +144,5 @@ for policy_type in policy_types:
     ax6.set_xlabel("nfe")
 
     sns.despine(fig)
-
+    plt.suptitle(f"Convergence metrics for {policy_type}", y=0.9)
     plt.show()

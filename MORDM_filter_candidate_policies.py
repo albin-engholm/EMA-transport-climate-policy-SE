@@ -7,8 +7,9 @@ Created on Wed Jul  5 15:01:40 2023
 
 from ema_workbench import (RealParameter, CategoricalParameter,
                            ScalarOutcome, ema_logging,
-                           perform_experiments, Constant)
-from ema_workbench.em_framework.evaluators import MultiprocessingEvaluator
+                           perform_experiments, Constant,
+                           MultiprocessingEvaluator)
+
 import seaborn as sns
 from trv_policies import df_trv
 if __name__ == "__main__":
@@ -17,21 +18,19 @@ if __name__ == "__main__":
     import pandas as pd
     df_full = pd.DataFrame()
     policy_types = ["All levers", "No transport efficient society"]
-    policy_types = ["All levers"]  # ,"No transport efficient society"]
+    # policy_types = ["All levers"]  # ,"No transport efficient society"]
     load_results = 1
     if load_results == 1:
-        date = "2023-12-12"
-        nfe = 250000
+        date = "2023-12-30"
+        nfe = 1000000
         for idx, policy_type in enumerate(policy_types):
             if idx == 0:
-                t1 = './output_data/'+policy_type + \
-                    str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
-               # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
+                t1 = f'./output_data/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p'
+                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
-                t2 = './output_data/'+policy_type + \
-                    str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
+                t2 = f'./output_data/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}model_.p'
                 model = pickle.load(open(t2, "rb"))
                 scenario_count = 0
                 for results in results_list:
@@ -40,16 +39,14 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if idx == 1:
-                date = "2023-11-14"
-                nfe = 150000
-                t1 = './output_data/'+policy_type + \
-                    str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+".p"
-               # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
+                date = "2023-12-28"
+                nfe = 1000000
+                t1 = f"./output_data/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
+                # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
                     open(t1, "rb"))
-                t2 = './output_data/'+policy_type + \
-                    str(nfe)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
+                t2 = f'./output_data/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}model_.p'
                 model = pickle.load(open(t2, "rb"))
                 for results in results_list:
                     results["Policy type"] = policy_type
@@ -119,15 +116,18 @@ if __name__ == "__main__":
     # %% pairplots of all policies
 
     pairplot_kws = {"alpha": 0.8, "s": 2}
+    diag_kws = {"common_norm": False}
     # levers on levers
-    sns.pairplot(data=df_full, x_vars=model.levers.keys(),
-                 y_vars=model.levers.keys(), hue="Policy type", plot_kws=pairplot_kws)
+    sns.pairplot(data=df_full[df_full["Policy type"] != "Trv"], x_vars=model.levers.keys(),
+                 y_vars=model.levers.keys(), hue="Policy type", plot_kws=pairplot_kws, diag_kws=diag_kws)
 
     # outcomes on outcomes
-    sns.pairplot(data=df_full, x_vars=outcomes, y_vars=outcomes, hue="Policy type", plot_kws=pairplot_kws)
+    sns.pairplot(data=df_full[df_full["Policy type"] != "Trv"], x_vars=outcomes,
+                 y_vars=outcomes, hue="Policy type", plot_kws=pairplot_kws, diag_kws=diag_kws)
 
     # levers on outcomes
-    sns.pairplot(data=df_full, x_vars=model.levers.keys(), y_vars=outcomes, hue="Policy type", plot_kws=pairplot_kws)
+    sns.pairplot(data=df_full[df_full["Policy type"] != "Trv"], x_vars=model.levers.keys(),
+                 y_vars=outcomes, hue="Policy type", plot_kws=pairplot_kws, diag_kws=diag_kws)
 
     # %%  Prepare clustering and filtering of policies
     from sklearn.preprocessing import StandardScaler
@@ -577,7 +577,17 @@ if __name__ == "__main__":
    # df_candidate_policies = df_candidate_policies.reset_index(drop=True)
     # Remove unnecessary columns
     #df_candidate_policies = df_candidate_policies.drop(columns=["Score 1","Score 2","Method"])
-    df_candidate_policies = df_full.sample(100)
+    #df_candidate_policies = df_full.sample(100)
+
+    # %% Final random sample
+    n_policies = 100  # Number of policies per policy type
+    df_candidate_policies_sampled = pd.DataFrame()
+    df_candidate_policies = pd.DataFrame()
+    for policy_type in df_full_no_TRV["Policy type"].unique():
+        df_candidate_policies_sampled = pd.concat(
+            [df_candidate_policies_sampled, df_full[df_full["Policy type"] == policy_type].sample(n_policies)])
+
+    df_candidate_policies = pd.concat([df_candidate_policies_sampled, df_trv], join="inner", axis=0)
     # %% Save the dataframe with candidate policies
     filename = date+"_"+str(nfe)+"candidate_policies"+".p"
     pickle.dump(df_candidate_policies, open("./output_data/"+filename, "wb"))
