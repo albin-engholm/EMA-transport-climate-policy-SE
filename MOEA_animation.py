@@ -15,7 +15,7 @@ import matplotlib.animation as animation
 file_str = "1000000_All levers_2023-12-30"
 archives = ArchiveLogger.load_archives("./archives_animation/"+file_str+".tar.gz")
 
-dpi = 150
+dpi = 80 #default dpi 300
 # Filter out empty dataframes
 archives = {k: v for k, v in archives.items() if not v.empty}
 
@@ -62,10 +62,10 @@ def animate(i):
     ax.set_title(f'Number of function evaluations: {sorted(archives.keys())[i]}')
 
 
-ani = animation.FuncAnimation(fig, animate, frames=len(dataframes), interval=200, repeat=True)
+ani = animation.FuncAnimation(fig, animate, frames=len(dataframes), interval=100, repeat=True)  # default interval 200
 
 # Save the animation
-ani.save('./figs/animation'+file_str+'.gif', writer='Pillow', fps=10, dpi=dpi)
+ani.save('./figs/animation'+file_str+'.gif', writer='Pillow', fps=4, dpi=dpi)  # default fps 50
 
 # Create a new figure and axes for the static plot
 fig_static, ax_static = plt.subplots()

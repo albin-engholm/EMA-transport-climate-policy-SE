@@ -4,6 +4,7 @@ Created on Mon Jun 12 14:18:42 2023
 
 @author: aengholm
 """
+import matplotlib.patches as patches
 from ema_workbench.analysis import feature_scoring
 
 from ema_workbench.analysis import prim
@@ -49,7 +50,7 @@ if load_results == 1:
         df_outcomes = pd.DataFrame(outcomes_xp).reset_index(drop=True)
         experiments = experiments_xp
     #experiments, outcomes = pickle.load(open(t1, "rb"))
-    t2 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}model_.p"
+    t2 = f"./output_data/robustness_analysis_results/{n_scenarios}_scenarios_MORDM_OE_{date}model_.p"
     model = pickle.load(open(t2, "rb"))
 
     # DF with both experiments and outcomes
@@ -62,7 +63,6 @@ if load_results == 1:
             df_full.loc[index, "Uncertainty set"] = "XP"
     df_full = df_full[df_full["policy"] != "Reference policy"]
 # %% Visualization of reference scenario performance
-
 color_coding = {
     "All levers": 'blue',
     "No transport efficient society": 'orange',
@@ -76,6 +76,11 @@ outcomes = ['M1_CO2_TTW_total',
             'M3_driving_cost_truck',
             'M4_energy_use_bio',
             'M5_energy_use_electricity']
+outcomes = [
+    'M2_driving_cost_car',
+    'M3_driving_cost_truck',
+    'M4_energy_use_bio',
+    'M5_energy_use_electricity']
 limits_outcomes = pd.DataFrame()  # Create a dataframe for lever-based limits
 for item in outcomes:
     limits_outcomes.loc[0, item] = min(df_reference_subset[item])  # Get lower bound
@@ -88,11 +93,35 @@ paraxes = parcoords.ParallelAxes(limits_outcomes, formatter={"maxima": ".1f", "m
 n_unique_policies = len(df_reference_subset['Policy type'].unique())
 # Manually specify colors: Dark Plum and Dark Gold
 colors = ["blue", "orange", "red"]
-
+trv_policies = df_full[(df_full["Policy type"] == "Trv")]["policy"].unique()
 # Plot selected policies with the manually specified colors
 for idx, policy_type in enumerate(df_reference_subset['Policy type'].unique()):
     selected_data = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
-    paraxes.plot(selected_data, label=f'Policy type: {policy_type}', color=colors[idx])
+    lines = paraxes.plot(selected_data, label=f'{policy_type}', color=colors[idx])
+    # Annotate only the lines with 'Trv' policy type
+    if policy_type == 'Trv':
+        # Get the axis limits for the last outcome
+        last_axis_limits = paraxes.limits[outcomes[-1]]
+
+        for i, (line, policy_name) in enumerate(zip(selected_data[outcomes].values, trv_policies)):
+            # Normalize the y-position within the last axis limits
+            y_value = line[-1]  # This is the data value at the last axis
+            y_relative = (y_value - last_axis_limits[0]) / (last_axis_limits[1] - last_axis_limits[0])
+
+            # Calculate the x-position as a relative position beyond the last axis
+            # Using the axes' number to get a position just after the last axis
+            x_relative = len(outcomes) + 0.02  # The -0.5 here is to give some space from the last axis
+
+            # Now we use the axes' transform to place the text correctly
+            # The axes for the parallel coordinates plot are in a list, paraxes.axes
+            # We take the transform of the last axis
+            last_axis_transform = paraxes.axes[-1].transData
+
+            text = policy_name
+            fontsize = 22
+            paraxes.fig.text(x_relative, y_relative, text, transform=last_axis_transform,
+                             fontsize=fontsize, color='red', ha='left', va='center',
+                             bbox=dict(facecolor='white', alpha=0, edgecolor='none', boxstyle='round,pad=0.2'))
 
 # Get the figure that parcoords is using
 parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
@@ -100,7 +129,7 @@ parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
 #     ax.set_xticklabels([])  # This removes the x-axis tick labels
 #     ax.set_yticklabels([])  #
 # Set figure size and facecolor
-parcoords_fig.set_size_inches(10, 10)
+parcoords_fig.set_size_inches(14, 16)
 # parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
 
 # Optionally, you can add a legend if you need it
@@ -109,6 +138,8 @@ paraxes.legend()
 # Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
 parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_outcomes.png",
                       dpi=300, format="png", bbox_inches="tight", transparent=True)
+
+# %%
 # Pairplot outcomes on outcomes
 sns.pairplot(data=df_reference_subset, x_vars=outcomes, y_vars=outcomes,
              hue="Policy type", palette=colors, diag_kws={"common_norm": False})
@@ -121,10 +152,6 @@ for item in levers:
     limits_levers.loc[0, item] = min(df_reference_subset[item])  # Get lower bound
     limits_levers.loc[1, item] = max(df_reference_subset[item])  # Get upper bound
 paraxes = parcoords.ParallelAxes(limits_levers, formatter={"maxima": ".1f", "minima": ".1f"}, fontsize=20, rot=90)
-
-# Non-selected policies in gray
-
-# Create a colormap for unique policy types using viridis
 
 
 # Plot selected policies with the manually specified colors
@@ -286,7 +313,23 @@ for outcome in outcomes_M:
 # %% Plots of interesting results
 
 sns.scatterplot(data=df_full[df_full["scenario"] == "Reference"], x='Electrified VKT share light vehicles',
-                y='M4_energy_use_bio', size="Fossile fuel price relative reference light vehicles", hue="Policy type", palette=color_coding)
+                y='M4_energy_use_bio', hue="Policy type", palette=color_coding, legend=False)
+# Annotating trv policies
+bbox_props = dict(boxstyle="round,pad=0.3", fc="white", ec="none", lw=2, alpha=0.5)
+for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
+    df_trv_policy = df_full[df_full['policy'] == trv_policy]
+
+    plt.annotate(
+        trv_policy,
+        (df_trv_policy["Electrified VKT share light vehicles"].values[0],
+         df_trv_policy["M4_energy_use_bio"].values[0]),
+        textcoords="offset points",
+        xytext=(0, -20),
+        ha='center', color="red", fontsize=18, bbox=bbox_props
+    )
+plt.xlim([0.68, .85])
+sns.despine()
+
 # plt.figure()
 #sns.lmplot(data=df_full,x='Electrified VKT share light vehicles',y='M4_energy_use_bio',hue="Electrified VKT share trucks",col="Policy type",scatter_kws={"s":0.1})
 # %% Parcoords of percentage deviation  metrics
@@ -348,7 +391,7 @@ for uncertainty_set in policy_metrics_df["Uncertainty set"].unique():
 
 plt.rcParams["figure.figsize"] = original_figsize
 
-# %% Parcoords of all policies
+# %% Parcoords of all policies and robustness metrics
 
 # Define your color coding for the legend
 color_coding = {"All levers": 'blue', "No transport efficient society": 'orange', "Trv": 'red'}
@@ -357,7 +400,7 @@ color_coding = {"All levers": 'blue', "No transport efficient society": 'orange'
 original_figsize = plt.rcParams["figure.figsize"]
 
 # Set the figure size you want
-plt.rcParams["figure.figsize"] = [10, 10]
+plt.rcParams["figure.figsize"] = [10, 12]
 
 metrics = [
     "90_percentile_deviation",
@@ -391,7 +434,7 @@ for metric in metrics:
         # Define your color coding for the legend
         labels = list(color_coding.keys())
         legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
-
+        trv_policies = df_full[(df_full["Policy type"] == "Trv")]["policy"].unique().tolist()
         count = 0
         # Loop over rows in dataframe
         for i, row in policy_metrics_subset.iterrows():
@@ -400,12 +443,45 @@ for metric in metrics:
             color = color_list[count]  # Corresponding color from color list
             paraxes.plot(data, color=color)
             count += 1
+            policy_type = policy_metrics_subset.loc[i, "Policy type"]
+
+            if policy_type == 'Trv':
+                print(f"Policy type used for annotation: {policy_type}")
+                # Get the axis limits for the last outcome
+                last_axis_limits = paraxes.limits[dynamic_outcomes[-1]]
+
+                # Normalize the y-position within the last axis limits
+                y_value = data[dynamic_outcomes[-1]]  # This is the data value at the last axis
+                y_relative = (y_value - last_axis_limits[0]) / (last_axis_limits[1] - last_axis_limits[0])
+
+                # Calculate the x-position as a relative position beyond the last axis
+                x_relative = len(dynamic_outcomes) + 0.05  # Adjust this value as needed
+
+                # Now we use the axes' transform to place the text correctly
+                last_axis_transform = paraxes.axes[-1].transData
+
+                text = policy_metrics_subset.loc[i, "policy"]  # Use the policy name from the current row
+                fontsize = 16
+                paraxes.fig.text(x_relative, y_relative, text, transform=last_axis_transform,
+                                 fontsize=fontsize, color='red', ha='left', va='center',
+                                 bbox=dict(facecolor='white', alpha=0, edgecolor='none', boxstyle='round,pad=0.2'))
 
         # Add legend manually
-        plt.legend(handles=legend_elements, loc='upper right')
+        #plt.legend(handles=legend_elements, loc='upper right')
 
+        # Use shorter outcome names as xticks (doesnt work yet)
+        # outcomes= [
+        #     'M1_CO2_TTW_total',
+        #     'M2_driving_cost_car',
+        #     'M3_driving_cost_truck',
+        #     'M4_energy_use_bio',
+        #     'M5_energy_use_electricity'
+        # ]
+        # for i,ax in enumerate(paraxes.axes):
+        #     ax.set_xticklabels([outcomes[i]])  # This removes the x-axis tick labels
+        #     ax.set_yticklabels([])  #
         # Show the plot
-        plt.title(f"Metric: {metric}, Uncertainty set: {uncertainty_set}")
+        plt.title(f"Metric: {metric}")
         plt.show()
 
 plt.rcParams["figure.figsize"] = original_figsize
@@ -493,6 +569,7 @@ for metric in metrics:
             linewidth = linewidth_list[index]
             zorder = zorder_list[index]
             paraxes.plot(data.iloc[0], color=color, alpha=alpha, linewidth=linewidth, zorder=zorder)
+            # Annotate only the lines with 'Trv' policy type
 
         plt.legend(handles=legend_elements, loc='upper right')
         #plt.title(f"Metric: {metric}, Uncertainty set: {uncertainty_set}")
@@ -939,4 +1016,103 @@ y = outcomes_xp
 
 fs = feature_scoring.get_feature_scores_all(x, y)
 sns.heatmap(fs, cmap="viridis", annot=True)
+plt.show()
+
+# %% Policy metrics
+policy_metrics_trv = policy_metrics_df[policy_metrics_df["Policy type"] == "Trv"]
+
+columns_90th_percentile = [
+    col for col in policy_metrics_trv.columns if '90_percentile_deviation' in col and 'normalized' not in col]
+
+columns_90th_percentile.append("policy")
+policy_metrics_trv_90 = policy_metrics_trv[columns_90th_percentile]
+
+df_full_trv = df_full[df_full["scenario"] == "Reference"]
+df_full_trv = df_full_trv[df_full_trv["Policy type"] == "Trv"][outcomes+["policy"]]
+# Set "policy" column as the index for df_full_trv
+df_full_trv.set_index("policy", inplace=True)
+
+# Set "policy" column as the index for policy_metrics_trv_90
+policy_metrics_trv_90.set_index("policy", inplace=True)
+df_trv = pd.concat([df_full_trv, policy_metrics_trv_90], axis=1)
+df_trv["policy"] = df_trv.index
+
+x_vars = ['M1_CO2_TTW_total', 'M2_driving_cost_car', 'M3_driving_cost_truck',
+          'M4_energy_use_bio', 'M5_energy_use_electricity']
+y_vars = ['90_percentile_deviation M1_CO2_TTW_total',
+          '90_percentile_deviation M2_driving_cost_car',
+          '90_percentile_deviation M3_driving_cost_truck',
+          '90_percentile_deviation M4_energy_use_bio',
+          '90_percentile_deviation M5_energy_use_electricity']
+# Create a FacetGrid with scatterplots for each metric
+
+# Your existing code for creating df_long
+df_long = pd.melt(df_trv, id_vars=["policy"],
+                  value_vars=['M1_CO2_TTW_total', 'M2_driving_cost_car', 'M3_driving_cost_truck',
+                              'M4_energy_use_bio', 'M5_energy_use_electricity'],
+                  var_name='Metric', value_name='Outcome in reference scenario')
+
+# Add the 90th percentile deviation values
+# Adjust this based on how your data is structured
+df_long['90th Percentile Deviation'] = df_long.apply(
+    lambda row: df_trv.at[row['policy'], '90_percentile_deviation ' + row['Metric']], axis=1
+)
+# %%Ranking of reference scenario and 90th percentile deviation
+
+
+def rank_values(series):
+    return series.rank(method='dense')
+
+
+# Apply the ranking within each group for each column
+df_long['Ranking outcome in reference scenario'] = df_long.groupby(
+    'Metric')['Outcome in reference scenario'].transform(rank_values)
+df_long['Ranking 90th percentile deviation'] = df_long.groupby(
+    'Metric')['90th Percentile Deviation'].transform(rank_values)
+
+# Sample over different values of w_ref_rank
+weights = [0, 0.25, 0.5, 0.75, 1]
+df_samples = pd.DataFrame()
+
+for w_ref in weights:
+    w_rob = 1 - w_ref
+    temp_df = df_long.copy()
+    temp_df["Weighted ranking"] = w_ref * temp_df['Ranking outcome in reference scenario'] + \
+        w_rob * temp_df['Ranking 90th percentile deviation']
+    temp_df['w ref'] = w_ref
+    df_samples = pd.concat([df_samples, temp_df])
+
+# Plot using FacetGrid
+color_map = ["green", "lightcoral", "red", "darkred", "coral", "cornflowerblue", "blue", "darkblue"]
+g = sns.FacetGrid(df_samples, col='w ref', col_wrap=3, height=4, aspect=1.5, sharex=False)
+g.map(sns.lineplot, 'Metric', 'Weighted ranking', 'policy', marker='o', palette=color_map)
+g.fig.subplots_adjust(hspace=0.6, wspace=0.3)
+# Enhancing the plot
+g.add_legend()
+g.set_xticklabels(rotation=45)
+plt.subplots_adjust(top=0.9)
+g.fig.suptitle('Weighted Ranking of Policies for Different w_ref Values')
+
+plt.show()
+
+# %% Visualize robustness and reference scenario performance
+# Create the FacetGrid
+g = sns.FacetGrid(df_long, col='Metric', col_wrap=3, sharex=False, sharey=False)
+g = g.map(plt.scatter, 'Outcome in reference scenario', '90th Percentile Deviation', color='red')
+g.fig.subplots_adjust(hspace=0.3, wspace=0.25)
+# Annotate each point with its policy
+for ax, (metric, subset) in zip(g.axes.flatten(), df_long.groupby('Metric')):
+    subset.apply(lambda row: ax.text(row['Outcome in reference scenario'],
+                                     row['90th Percentile Deviation'],
+                                     str(row['policy']),
+                                     fontsize=10,
+                                     ha='left', va="bottom"), axis=1)
+# Set the subplot titles and x-axis labels for all subplots
+for ax, title in zip(g.axes.flatten(), x_vars):
+    ax.set_title(title)
+    ax.set_xlabel('Outcome in reference scenario')
+
+# Set the subplot titles
+g.set_titles("{col_name}", size=10)
+
 plt.show()
