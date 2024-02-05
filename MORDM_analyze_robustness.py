@@ -65,7 +65,9 @@ if load_results == 1:
         else:
             df_full.loc[index, "Uncertainty set"] = "XP"
     df_full = df_full[df_full["policy"] != "Reference policy"]
-
+    df_full["CO2 target not met"] = df_full['M1_CO2_TTW_total'] > 1.89
+    df_full["Bio share of fuel energy"] = df_full["M4_energy_use_bio"] / \
+        (df_full["Energy total"]-df_full["M5_energy_use_electricity"])
     # Create helper lists of outcomes, levers and uncertainties
     # Different outcome sets
     all_outcomes = model.outcomes.keys()
@@ -90,16 +92,23 @@ if load_results == 1:
     # Define color coding mapping
     color_coding = {
         "All levers": '#0005CC',
-        "No transport efficient society": '#34CC00',
-        "Trv": '#C74200'}
+        "No transport efficient society": '#05CC00',
+        "Trv": '#CC0005'}
     light_color_coding = {
         "All levers": '#6064CC',
         "No transport efficient society": '#7ECC60',
         "Trv": '#C77F5D'
     }
+
+    ultra_light_color_coding = {
+        "All levers": '#EDEDFF',
+        "No transport efficient society": '#EDFFED',
+        "Trv": '#FFEDED'
+    }
+    df_full_trv = df_full[df_full["Policy type"] == "Trv"]
+    df_trv_levers = df_full_trv[list(levers)+["policy"]].drop_duplicates()
 # %% Visualization of reference scenario performance
 df_reference_subset = df_full[(df_full["scenario"] == "Reference") & (df_full["Uncertainty set"] == "XP")]
-
 
 limits_outcomes = pd.DataFrame()  # Create a dataframe for lever-based limits
 for item in objective_outcomes:
@@ -190,7 +199,15 @@ g = sns.pairplot(
 # Move the legend to the right of the figure.
 # You can adjust the values inside bbox_to_anchor to best fit your figure's size.
 g._legend.remove()
-g.add_legend(title='', bbox_to_anchor=(1, 0.5), loc='center right', fontsize=12)
+g.add_legend(title='', bbox_to_anchor=(1, .5), loc='center right', fontsize=16, ncols=1)
+
+for ax in g.axes.flatten():
+    # Set new font sizes here
+    ax.set_xlabel(ax.get_xlabel(), fontsize=14)  # Adjust fontsize as needed for x labels
+    ax.set_ylabel(ax.get_ylabel(), fontsize=14)
+    ax.tick_params(axis='x', labelsize=12)  # Adjust labelsize as needed for x ticks
+    ax.tick_params(axis='y', labelsize=12)  # Adjust labelsize as needed for y ticks
+
 
 # Adjust the figure to make space for the legend
 # plt.subplots_adjust(right=0.9)  # You might need to tweak this value.
@@ -246,11 +263,12 @@ parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_levers.png"
                       dpi=300, format="png", bbox_inches="tight", transparent=True)
 
 # %%Relationship between biofuels and electrification rate in reference scenario
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(8, 5))
 sns.scatterplot(data=df_full[df_full["scenario"] == "Reference"], x='Electrified VKT share light vehicles',
                 y='M4_energy_use_bio', hue="Policy type", palette=color_coding, legend=False, s=25)
 # Annotating trv policies
 bbox_props = dict(boxstyle="round,pad=0.1", fc="white", ec="none", lw=0, alpha=0.5)
+
 for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
     df_trv_policy = df_full[df_full['policy'] == trv_policy]
 
@@ -262,9 +280,77 @@ for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
         xytext=(0, -15),
         ha='center', color=color_coding["Trv"], fontsize=12, bbox=bbox_props
     )
-plt.xlim([0.68, .85])
+plt.axvline(x=0.68, linestyle="--", color="black", linewidth=1, zorder=10)
+plt.text(s="X6_car_electrification_rate: 0.68", x=0.68+.001, y=4, color="black")
+plt.xlim([0.66, .85])
 sns.despine()
 
+# %%Relationship between biofuels and electrification rate in reference scenario
+# First, create a scatter plot with all policy types
+plt.figure(figsize=(8, 6))
+sns.scatterplot(
+    data=df_full[df_full["scenario"] == "Reference"],
+    x='Electrified VKT share light vehicles',
+    y='M4_energy_use_bio',
+    hue="Policy type",
+    palette=color_coding,
+    legend=False,
+    s=25
+)
+
+# Then, draw regression lines for two specific policy types
+# You'll need to adjust 'PolicyType1' and 'PolicyType2' to match your actual policy type names
+for policy_type in ['All levers', 'No transport efficient society']:
+    # Filter the data
+    df_subset = df_full[(df_full["scenario"] == "Reference") & (df_full["Policy type"] == policy_type)]
+
+    # Plot the regression line
+    sns.regplot(
+        data=df_subset,
+        x='Electrified VKT share light vehicles',
+        y='M4_energy_use_bio',
+        scatter=False,  # Do not draw scatter again
+        color=color_coding[policy_type],
+        label=policy_type
+    )
+
+for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
+    df_trv_policy = df_full[df_full['policy'] == trv_policy]
+
+    plt.annotate(
+        trv_policy,
+        (df_trv_policy["Electrified VKT share light vehicles"].values[0],
+         df_trv_policy["M4_energy_use_bio"].values[0]),
+        textcoords="offset points",
+        xytext=(0, -15),
+        ha='center', color=color_coding["Trv"], fontsize=12, bbox=bbox_props
+    )
+
+# Add reference line and text - you can continue to use your existing code here
+plt.axvline(x=0.68, linestyle="--", color="black", linewidth=1, zorder=10)
+plt.text(s="Reference scenario input car \n electrification rate: 0.68", x=0.68+.001, y=4, color="black")
+
+# Set the x and y limits of the plot
+plt.xlim([0.66, .85])
+
+# Despine the plot
+sns.despine()
+
+# Show the legend
+plt.legend()
+
+# Show the plot
+plt.show()
+
+# %% Distribution of electrification outcomes
+vars_pairplot = ["Electrified VKT share light vehicles", "Bio share of fuel energy"]
+g = sns.pairplot(data=df_full, x_vars=vars_pairplot,
+                 y_vars=vars_pairplot, hue="CO2 target not met",
+                 palette=["green", "red"], plot_kws=dict(s=.01, alpha=1))
+# %% Distribution of electrification and bio outcomes
+g = sns.pairplot(data=df_full, x_vars=vars_pairplot, kind="kde",
+                 y_vars=vars_pairplot, hue="CO2 target not met",
+                 palette=["green", "red"], plot_kws=dict(fill=True, alpha=0.5, levels=10, gridsize=100))
 
 # %% Calculate robustness metrics
 
@@ -398,7 +484,7 @@ for outcome in key_outcomes:
         plt.show()
 # %% Visualize satisficing CO2
 g = sns.displot(policy_metrics_df, x="Satisficing metric M1_CO2_TTW_total",
-                hue="Policy type", kind="kde", common_norm=False, bw_adjust=0.9, cut=0,
+                hue="Policy type", kind="kde", common_norm=False, bw_adjust=0.5, cut=0,
                 palette=color_coding, fill=True)
 
 g._legend.set_bbox_to_anchor((0.7, 0.9, 0, 0))
@@ -476,14 +562,16 @@ original_figsize = plt.rcParams["figure.figsize"]
 # Set the figure size
 plt.rcParams["figure.figsize"] = [8, 8]
 
+
+highlight_policies = [969, 457, 1044, 1294, 2395, 1507]
+linestyles = ["solid", "dotted", "dashdot", "solid", "dotted", "dashdot"]
+
 for robustness_metric in robustness_metrics:
     dynamic_outcomes = [f"{robustness_metric} {outcome}" for outcome in key_outcomes]  # Dynamic outcomes
 
     # for uncertainty_set in policy_metrics_df["Uncertainty set"].unique():
     for uncertainty_set in ["XP"]:
         policy_metrics_subset = policy_metrics_df[policy_metrics_df["Uncertainty set"] == uncertainty_set]
-
-        color_list = [color_coding[pt] for pt in policy_metrics_subset["Policy type"]]
 
         limits_outcomes = pd.DataFrame()  # Create a dataframe for limits
         for i, item in enumerate(dynamic_outcomes):
@@ -503,37 +591,50 @@ for robustness_metric in robustness_metrics:
         labels = list(color_coding.keys())
         legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
         trv_policies = df_full[(df_full["Policy type"] == "Trv")]["policy"].unique().tolist()
-        count = 0
 
-        # Loop over rows in dataframe
+        # Loop over rows in dataframe. Plot all policies
         for i, row in policy_metrics_subset.iterrows():
             row_renamed = row.rename(rename_dict)
+            policy_type = row["Policy type"]
             data = row_renamed[key_outcomes]
-            color = color_list[count]  # Corresponding color from color list
+            color = ultra_light_color_coding[policy_type]
             paraxes.plot(data, color=color)
-            count += 1
-            policy_type = policy_metrics_subset.loc[i, "Policy type"]
 
-            # if policy_type == 'Trv':
-            #     # Get the axis limits for the last outcome
-            #     last_axis_limits = paraxes.limits[dynamic_outcomes[-1]]
+        # Then plot the highlighted policies. This is to ensure highlighted policies are plot on top
+        count = 0
+        for i, row in policy_metrics_subset.iterrows():
+            policy_type = row["Policy type"]
+            if policy_type == 'Trv':
+                row_renamed = row.rename(rename_dict)
+                data = row_renamed[key_outcomes]
+                color = color_coding[policy_type]
+                paraxes.plot(data, color=color)
 
-            #     # Normalize the y-position within the last axis limits
-            #     y_value = data[dynamic_outcomes[-1]]  # This is the data value at the last axis
-            #     y_relative = (y_value - last_axis_limits[0]) / (last_axis_limits[1] - last_axis_limits[0])
+                # Get the axis limits for the last outcome
+                last_axis_limits = paraxes.limits.iloc[:, -1]
 
-            #     # Calculate the x-position as a relative position beyond the last axis
-            #     x_relative = len(dynamic_outcomes) + 0.05  # Adjust offset to make it pretty
+                # Normalize the y-position within the last axis limits
+                y_value = data[rename_dict.get(dynamic_outcomes[-1])]  # This is the data value at the last axis
+                y_relative = (y_value - last_axis_limits[0]) / (last_axis_limits[1] - last_axis_limits[0])
 
-            #     # Now we use the axes' transform to place the text correctly
-            #     last_axis_transform = paraxes.axes[-1].transData
+                # Calculate the x-position as a relative position beyond the last axis
+                x_relative = len(dynamic_outcomes) + 0.05  # Adjust offset to make it pretty
 
-            #     text = policy_metrics_subset.loc[i, "policy"]  # Use the policy name from the current row
-            #     fontsize = 16
-            #     paraxes.fig.text(x_relative, y_relative, text, transform=last_axis_transform,
-            #                      fontsize=fontsize, color='red', ha='left', va='center',
-            #                      bbox=dict(facecolor='white', alpha=0, edgecolor='none', boxstyle='round,pad=0.2'))
+                # Now we use the axes' transform to place the text correctly
+                last_axis_transform = paraxes.axes[-1].transData
 
+                text = policy_metrics_subset.loc[i, "policy"]  # Use the policy name from the current row
+                fontsize = 16
+                paraxes.fig.text(x_relative, y_relative, text, transform=last_axis_transform,
+                                 fontsize=fontsize, color='red', ha='left', va='center',
+                                 bbox=dict(facecolor='white', alpha=0, edgecolor='none', boxstyle='round,pad=0.2'))
+            # elif (int(row["policy"]) in highlight_policies):
+
+            #     row_renamed = row.rename(rename_dict)
+            #     data = row_renamed[key_outcomes]
+            #     color = color_coding[policy_type]
+            #     paraxes.plot(data, color=color, linestyle=linestyles[count],linewidth=2.5)
+            #     count+=1
         # Add and adjustlegend manually
         plt.legend(handles=legend_elements, bbox_to_anchor=(1, 1), loc="lower right", fontsize=12, frameon=False)
 
@@ -848,7 +949,7 @@ parcoords_fig.set_size_inches(10, 10)
 paraxes.legend()
 
 # %% Find most common vulnerabilities
-df_full["CO2 target not met"] = df_full['M1_CO2_TTW_total'] > 1.89
+
 df_policy_vulnerabilities = pd.DataFrame(index=df_full["policy"].unique())
 n_vulnerabilities = 2
 vulnerabilities_list = []
@@ -894,7 +995,8 @@ for policy in df_full["policy"].unique():
         else:
             # If there are no more vulnerabilities to find, we break out of the loop
             break
-
+df_policy_vulnerabilities["CO2 target not met share"] = df_policy_vulnerabilities["CO2 target not met count"] / \
+    len(df_full["scenario"].unique())
 # %% countplot of vulnerabilities
 
 sns.countplot(df_policy_vulnerabilities, x="Vulnerability 1", hue="Policy type")
@@ -1031,7 +1133,7 @@ df_v = df_v.reset_index(drop=True)
 x = df_v[model.uncertainties.keys()]
 y = df_v["CO2 target not met"]
 x_rotated, rotation_matrix = prim.pca_preprocess(x, y)
-prim_alg = prim.Prim(x_rotated, y, threshold=0.9)
+prim_alg = prim.Prim(x, y, threshold=0.9)
 
 # Find 1st box
 box1 = prim_alg.find_box()
@@ -1039,12 +1141,12 @@ box1 = prim_alg.find_box()
 # Visualizations of Box1
 box1.show_tradeoff()
 
-for i in range(0, len(box1.peeling_trajectory.T.columns)):
-    s = box1.peeling_trajectory.T[i].id
-    if (i % 2) == 0:
-        plt.text(box1.peeling_trajectory.T[i].coverage, box1.peeling_trajectory.T[i].density + .02, s, fontsize=8)
-    else:
-        plt.text(box1.peeling_trajectory.T[i].coverage, box1.peeling_trajectory.T[i].density + .02, s, fontsize=8)
+# for i in range(0, len(box1.peeling_trajectory.T.columns)):
+#     s = int(box1.peeling_trajectory.T[i].id)
+#     if (i % 2) == 0:
+#         plt.text(box1.peeling_trajectory.T[i].coverage, box1.peeling_trajectory.T[i].density + .0, s, fontsize=8)
+#     else:
+#         plt.text(box1.peeling_trajectory.T[i].coverage, box1.peeling_trajectory.T[i].density + .0, s, fontsize=8)
 plt.show()
 # Inspect box with restrictions on 2 dimensions and max density (i.e. "last" box with res_dim=2)
 box_i = box1.peeling_trajectory[box1.peeling_trajectory["res_dim"]
@@ -1067,6 +1169,7 @@ original_palette = sns.color_palette()
 custom_palette = ['green', 'red']
 sns.set_palette(sns.color_palette(custom_palette))
 ax = box1.show_pairs_scatter(i1)
+ax.legend.set_title("")
 # for row in ax.axes:
 #     for subplot in row:
 #         subplot.set_facecolor('none')  # For the subplot background
@@ -1152,7 +1255,7 @@ for index, row in df_policy_vulnerabilities.iterrows():
 
 # %% Scatterplot of coverage and density
 # Plotting the scatterplot with the specified color coding
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(8, 6))
 sns.set_style("white")
 sns.scatterplot(
     data=df_policy_vulnerabilities,
@@ -1160,35 +1263,36 @@ sns.scatterplot(
     y="Density",
     hue="Policy type",
     palette=color_coding,
-    size="CO2 target not met count"
+    size="CO2 target not met share",
 )
 sns.despine()
 # Annotating and emphasizing the policy named "B"
 for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
     df_trv_policy = df_policy_vulnerabilities[df_policy_vulnerabilities['policy'] == trv_policy]
-    if trv_policy == "B":
-        plt.scatter(
-            df_trv_policy["Coverage"],
-            df_trv_policy["Density"],
-            color='red',  # Or any color that makes it stand out
-            s=100,          # Size of the marker
-            label='Policy B',
-            edgecolor='black',
-            linewidth=2,
-            zorder=5  # Make sure the point is on top
-        )
+    # if trv_policy == "B":
+    #     plt.scatter(
+    #         df_trv_policy["Coverage"],
+    #         df_trv_policy["Density"],
+    #         color='red',  # Or any color that makes it stand out
+    #         s=100,          # Size of the marker
+    #         #label='Policy B',
+    #         edgecolor='black',
+    #         linewidth=2,
+    #         zorder=5  # Make sure the point is on top
+    #     )
 
     plt.annotate(
         trv_policy,
         (df_trv_policy["Coverage"].values[0], df_trv_policy["Density"].values[0]),
         textcoords="offset points",
         xytext=(0, -13),
-        ha='center', color="red"
+        ha='center', color=color_coding["Trv"]
     )
 
 # Show the legend
-plt.legend(title='Policy type')
-plt.title('Density vs Coverage by Policy Type')
+plt.legend(title='')
+#plt.title('Density vs Coverage by Policy Type')
+plt.legend(frameon=False)
 plt.show()
 
 # %% Feature scoring
