@@ -11,7 +11,7 @@ from ema_workbench import (RealParameter, CategoricalParameter,
                            MultiprocessingEvaluator)
 
 import seaborn as sns
-from trv_policies import df_trv
+from sta_policies import df_sta
 if __name__ == "__main__":
     ema_logging.log_to_stderr(level=ema_logging.INFO)
     # %% Load candidate policies and model from previous optimization
@@ -21,8 +21,8 @@ if __name__ == "__main__":
     # policy_types = ["All levers"]  # ,"No transport efficient society"]
     load_results = 1
     if load_results == 1:
-        date = "2023-12-30"
-        nfe = 1000000
+        date = "2024-02-08"
+        nfe = 1000
         for idx, policy_type in enumerate(policy_types):
             if idx == 0:
                 t1 = f'./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p'
@@ -39,8 +39,8 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if idx == 1:
-                date = "2023-12-28"
-                nfe = 1000000
+                date = "2024-02-08"
+                nfe = 1000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
@@ -56,9 +56,9 @@ if __name__ == "__main__":
     df_full_sample = df_full.sample(100)
 
     # %% Prepare main analysis dataframes
-    df_full = pd.concat([df_full, df_trv], ignore_index=False)
-    df_full_no_TRV = df_full[df_full["Policy type"] != "Trv"].copy()
-    df_full_sample = pd.concat([df_full_sample, df_trv], ignore_index=False)
+    df_full = pd.concat([df_full, df_sta], ignore_index=False)
+    df_full_no_sta = df_full[df_full["Policy type"] != "STA"].copy()
+    df_full_sample = pd.concat([df_full_sample, df_sta], ignore_index=False)
 # %% Plot parcoords of policies against policy levers and outcomes
     from ema_workbench.analysis import parcoords
     import matplotlib.pyplot as plt
@@ -118,15 +118,15 @@ if __name__ == "__main__":
     pairplot_kws = {"alpha": 0.8, "s": 2}
     diag_kws = {"common_norm": False}
     # levers on levers
-    sns.pairplot(data=df_full[df_full["Policy type"] != "Trv"], x_vars=model.levers.keys(),
+    sns.pairplot(data=df_full[df_full["Policy type"] != "STA"], x_vars=model.levers.keys(),
                  y_vars=model.levers.keys(), hue="Policy type", plot_kws=pairplot_kws, diag_kws=diag_kws)
 
     # outcomes on outcomes
-    sns.pairplot(data=df_full[df_full["Policy type"] != "Trv"], x_vars=outcomes,
+    sns.pairplot(data=df_full[df_full["Policy type"] != "STA"], x_vars=outcomes,
                  y_vars=outcomes, hue="Policy type", plot_kws=pairplot_kws, diag_kws=diag_kws)
 
     # levers on outcomes
-    sns.pairplot(data=df_full[df_full["Policy type"] != "Trv"], x_vars=model.levers.keys(),
+    sns.pairplot(data=df_full[df_full["Policy type"] != "STA"], x_vars=model.levers.keys(),
                  y_vars=outcomes, hue="Policy type", plot_kws=pairplot_kws, diag_kws=diag_kws)
 
     # %%  Prepare clustering and filtering of policies
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     n_clusters = 100
 
     # Prepare clustering data
-    clustering_data = df_full_no_TRV[['M2_driving_cost_car', 'M3_driving_cost_truck',
+    clustering_data = df_full_no_sta[['M2_driving_cost_car', 'M3_driving_cost_truck',
                                       'M4_energy_use_bio', 'M5_energy_use_electricity']].values
     clustering_data = StandardScaler().fit_transform(clustering_data)
 
@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(clustering_data)
 
-    df_full_no_TRV['Kmeans cluster'] = kmeans.labels_
+    df_full_no_sta['Kmeans cluster'] = kmeans.labels_
     kmeans_cluster_centers = kmeans.cluster_centers_
     # You can also inspect the cluster centers
 
@@ -160,12 +160,12 @@ if __name__ == "__main__":
     # And the medoids (cluster centers) are
     medoids = kmedoids.cluster_centers_
     medoids_indices = kmedoids.medoid_indices_
-    df_full_no_TRV['Kmedoids cluster'] = labels
-    df_full_no_TRV["Is medoid"] = False
+    df_full_no_sta['Kmedoids cluster'] = labels
+    df_full_no_sta["Is medoid"] = False
     for medoid_index in medoids_indices:
-        df_full_no_TRV.loc[medoid_index, "Is medoid"] = True
+        df_full_no_sta.loc[medoid_index, "Is medoid"] = True
 
-    df_medoids = df_full_no_TRV[df_full_no_TRV["Is medoid"]].copy()
+    df_medoids = df_full_no_sta[df_full_no_sta["Is medoid"]].copy()
     df_medoids["Corresponding policy"] = list(df_medoids.index)
     df_medoids["Selection method"] = "K medoids"
     # add medoid policies to df clusters
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     if "index" in df_candidate_policy_comparison.columns:
         df_candidate_policy_comparison = df_candidate_policy_comparison.drop(columns=["index"])
     # Perform Random sampling
-    random_sample = df_full_no_TRV.sample(n_clusters)
+    random_sample = df_full_no_sta.sample(n_clusters)
     random_sample["Selection method"] = "Random"
     random_sample["Corresponding policy"] = list(random_sample.index)
 
@@ -192,15 +192,15 @@ if __name__ == "__main__":
 
 
 # %% Visualize k-medoids and kmeans clusters
-    sns.pairplot(df_full_no_TRV, hue="Kmeans cluster", x_vars=outcomes, y_vars=outcomes)
+    sns.pairplot(df_full_no_sta, hue="Kmeans cluster", x_vars=outcomes, y_vars=outcomes)
 
     # Visualize k-median clusters
-    sns.pairplot(df_full_no_TRV, hue="Kmedoids cluster", x_vars=outcomes, y_vars=outcomes)
+    sns.pairplot(df_full_no_sta, hue="Kmedoids cluster", x_vars=outcomes, y_vars=outcomes)
 
-    centroids = df_full_no_TRV[df_full_no_TRV['Is medoid']]
+    centroids = df_full_no_sta[df_full_no_sta['Is medoid']]
 
     # Create a FacetGrid object with hue for cluster color coding
-    g = sns.FacetGrid(df_full_no_TRV, col="Kmedoids cluster", hue="Kmedoids cluster", col_wrap=8)
+    g = sns.FacetGrid(df_full_no_sta, col="Kmedoids cluster", hue="Kmedoids cluster", col_wrap=8)
 
     # Map the scatter plot for each cluster
     g.map(sns.scatterplot, "M2_driving_cost_car", "M3_driving_cost_truck")
@@ -290,15 +290,15 @@ if __name__ == "__main__":
     ]
 
     # Score 1: Sum of the scaled values of metrics M2-M5
-    df_M = df_full_no_TRV[outcomes_filter]
+    df_M = df_full_no_sta[outcomes_filter]
     # Initialize the MinMaxScaler
     scaler = MinMaxScaler()
 
     # Scale the data (fit and transform)
-    df_M = pd.DataFrame(scaler.fit_transform(df_M), columns=df_M.columns, index=df_full_no_TRV.index)
+    df_M = pd.DataFrame(scaler.fit_transform(df_M), columns=df_M.columns, index=df_full_no_sta.index)
 
     # Assign the sum of scaled values as Score 1
-    df_full_no_TRV["Score 1"] = df_M.sum(axis=1)
+    df_full_no_sta["Score 1"] = df_M.sum(axis=1)
 
     # Score 2: Identify policies where all metrics are below a given percentile for each policy type
 
@@ -312,11 +312,11 @@ if __name__ == "__main__":
         ptype: {
             'count': {p: 0 for p in percentiles},
             'indices': {p: [] for p in percentiles}
-        } for ptype in df_full_no_TRV["Policy type"].unique()
+        } for ptype in df_full_no_sta["Policy type"].unique()
     }
 
     # Group data by policy type and compute results for each policy type and percentile
-    for policy_type, group in df_M[df_full_no_TRV["Policy type"].notna()].groupby(df_full_no_TRV["Policy type"]):
+    for policy_type, group in df_M[df_full_no_sta["Policy type"].notna()].groupby(df_full_no_sta["Policy type"]):
 
         for i in percentiles:
             # Compute percentiles specific to the current policy type
@@ -343,17 +343,17 @@ if __name__ == "__main__":
 
     # Assigning "Score 2" based on specific percentile (e.g., 0.55) and policy type
     specific_percentile = 0.75
-    df_full_no_TRV["Score 2"] = False  # Initialize the "Score 2" column
+    df_full_no_sta["Score 2"] = False  # Initialize the "Score 2" column
 
-    for policy_type in df_full_no_TRV["Policy type"].unique():
+    for policy_type in df_full_no_sta["Policy type"].unique():
         # Fetch indices of policies below the specific percentile for the current policy type
         indices_below_percentile = df_percentile_results.loc[specific_percentile, (policy_type, 'indices')]
 
         # Update the "Score 2" column for the identified policies
-        df_full_no_TRV.loc[indices_below_percentile, "Score 2"] = True
+        df_full_no_sta.loc[indices_below_percentile, "Score 2"] = True
 
     # Step 1: Filter rows where Score 2 is True
-    filtered_df = df_full_no_TRV[df_full_no_TRV["Score 2"]]
+    filtered_df = df_full_no_sta[df_full_no_sta["Score 2"]]
 
     # Step 2: Sort the dataframe based on Score 1 values
     sorted_df = filtered_df.sort_values(by="Score 1", ascending=True)
@@ -366,7 +366,7 @@ if __name__ == "__main__":
 
     # Generate sampled policies from percentlie based
     df_candidate_policies_sampled = pd.DataFrame()
-    for policy_type in df_full_no_TRV["Policy type"].unique():
+    for policy_type in df_full_no_sta["Policy type"].unique():
         df_candidate_policies_sampled = pd.concat(
             [df_candidate_policies_sampled, filtered_df[filtered_df["Policy type"] == policy_type].sample(n_clusters)])
     df_candidate_policies_sampled["Method"] = "75th percentile sampled"
@@ -376,16 +376,16 @@ if __name__ == "__main__":
 
     # Assigning "Score 2" based on specific percentile (e.g., 0.55) and policy type
     specific_percentile = 0.6
-    df_full_no_TRV["Score 2"] = False  # Initialize the "Score 2" column
+    df_full_no_sta["Score 2"] = False  # Initialize the "Score 2" column
 
-    for policy_type in df_full_no_TRV["Policy type"].unique():
-        # Fetch indices df_full_no_TRV policies below the specific percentile for the current policy type
+    for policy_type in df_full_no_sta["Policy type"].unique():
+        # Fetch indices df_full_no_sta policies below the specific percentile for the current policy type
         indices_below_percentile = df_percentile_results.loc[specific_percentile, (policy_type, 'indices')]
 
         # Update the "Score 2" column for the identified policies
-        df_full_no_TRV.loc[indices_below_percentile, "Score 2"] = True
+        df_full_no_sta.loc[indices_below_percentile, "Score 2"] = True
 
-    df_candidate_policies_percentile = df_full_no_TRV[df_full_no_TRV["Score 2"] == True].copy()
+    df_candidate_policies_percentile = df_full_no_sta[df_full_no_sta["Score 2"] == True].copy()
     df_candidate_policies_percentile["Method"] = "Percentile score"
 
     df_comparison = pd.concat([df_comparison, df_candidate_policies_percentile,
@@ -434,9 +434,7 @@ if __name__ == "__main__":
     plt.show()
 
     # Levers to be plotted
-    levers = ['L1_bio_share_diesel', 'L2_bio_share_gasoline', 'L3_additional_car_energy_efficiency',
-              'L4_additional_truck_energy_efficiency', 'L5_fuel_tax_increase_gasoline', 'L6_fuel_tax_increase_diesel',
-              'L7_km_tax_cars', 'L8_km_tax_trucks', 'L9_transport_efficient_planning_cars', 'L10_transport_efficient_planning_trucks']
+    levers = model.levers.keys()
 
     # Construct lever-based limits
     limits_levers = pd.DataFrame(index=['min', 'max'])
@@ -462,38 +460,7 @@ if __name__ == "__main__":
 
     # %% Choose what type of policies should be used as candidate policies, i.e. what method
     df_candidate_policies = df_candidate_policies_sampled.copy()
-    df_candidate_policies = pd.concat([df_candidate_policies, df_trv], join="inner", axis=0)
-# %%  Parcoords of candidate policies Plot policies against policy levers
-    from ema_workbench.analysis import parcoords
-    import matplotlib.pyplot as plt
-
-    # Levers to be plotted
-    levers = ['L1_bio_share_diesel', 'L2_bio_share_gasoline', 'L3_additional_car_energy_efficiency',
-              'L4_additional_truck_energy_efficiency', 'L5_fuel_tax_increase_gasoline', 'L6_fuel_tax_increase_diesel',
-              'L7_km_tax_cars', 'L8_km_tax_trucks', 'L9_transport_efficient_planning_cars', 'L10_transport_efficient_planning_trucks']
-
-    # Construct lever-based limits
-    limits_levers = pd.DataFrame(index=['min', 'max'])
-    for item in levers:
-        limits_levers[item] = [df_full[item].min(), df_full[item].max()]
-
-    # Initialize parallel coordinates plot
-    paraxes = parcoords.ParallelAxes(limits_levers)
-    paraxes.plot(df_full[df_full.index.isin(df_candidate_policies.index) == False],
-                 color='gray')  # Non-selected policies in gray
-
-    # Color map for unique policy types
-    colors = plt.cm.tab10(range(len(df_candidate_policies['Policy type'].unique())))
-
-    # Plot selected policies with unique colors
-    for idx, policy_type in enumerate(df_candidate_policies['Policy type'].unique()):
-        selected_data = df_candidate_policies[df_candidate_policies['Policy type'] == policy_type]
-        paraxes.plot(selected_data, label=f'Policy type: {policy_type}', color=colors[idx])
-
-    # Add legend, title, and display plot
-    paraxes.legend()
-    plt.title("Parallel Coordinates Plot of Policies")
-    plt.show()
+    df_candidate_policies = pd.concat([df_candidate_policies, df_sta], join="inner", axis=0)
 
     # %%  Plot policies against outcomes
 
@@ -583,11 +550,40 @@ if __name__ == "__main__":
     n_policies = 100  # Number of policies per policy type
     df_candidate_policies_sampled = pd.DataFrame()
     df_candidate_policies = pd.DataFrame()
-    for policy_type in df_full_no_TRV["Policy type"].unique():
+    for policy_type in df_full_no_sta["Policy type"].unique():
         df_candidate_policies_sampled = pd.concat(
             [df_candidate_policies_sampled, df_full[df_full["Policy type"] == policy_type].sample(n_policies)])
 
-    df_candidate_policies = pd.concat([df_candidate_policies_sampled, df_trv], join="inner", axis=0)
+    df_candidate_policies = pd.concat([df_candidate_policies_sampled, df_sta], join="inner", axis=0)
+
+    # %%  Parcoords of candidate policies Plot policies against policy levers
+    from ema_workbench.analysis import parcoords
+    import matplotlib.pyplot as plt
+
+    # Levers to be plotted
+    levers = model.levers.keys()
+    # Construct lever-based limits
+    limits_levers = pd.DataFrame(index=['min', 'max'])
+    for item in levers:
+        limits_levers[item] = [df_full[item].min(), df_full[item].max()]
+
+    # Initialize parallel coordinates plot
+    paraxes = parcoords.ParallelAxes(limits_levers)
+    paraxes.plot(df_full[df_full.index.isin(df_candidate_policies.index) == False],
+                 color='gray')  # Non-selected policies in gray
+
+    # Color map for unique policy types
+    colors = plt.cm.tab10(range(len(df_candidate_policies['Policy type'].unique())))
+
+    # Plot selected policies with unique colors
+    for idx, policy_type in enumerate(df_candidate_policies['Policy type'].unique()):
+        selected_data = df_candidate_policies[df_candidate_policies['Policy type'] == policy_type]
+        paraxes.plot(selected_data, label=f'Policy type: {policy_type}', color=colors[idx])
+
+    # Add legend, title, and display plot
+    paraxes.legend()
+    plt.title("Parallel Coordinates Plot of Policies")
+    plt.show()
     # %% Save the dataframe with candidate policies
     #filename = date+"_"+str(nfe)+"candidate_policies"+".p"
     filename = f"{date}_{nfe}candidate_policies.p"

@@ -68,41 +68,49 @@ if __name__ == "__main__":
 
     model.outcomes = [
         ScalarOutcome("CO2 TTW change light vehicles", ScalarOutcome.INFO,
-                      variable_name="C35"),
+                      variable_name="C32"),
 
         ScalarOutcome("CO2 TTW change trucks", ScalarOutcome.INFO,
-                      variable_name="C36"),
+                      variable_name="C33"),
 
         ScalarOutcome("VKT light vehicles", ScalarOutcome.INFO,
-                      variable_name="C38"),
+                      variable_name="C35"),
 
         ScalarOutcome("VKT trucks", ScalarOutcome.INFO,
-                      variable_name="C39"),
+                      variable_name="C36"),
 
         ScalarOutcome("VKT total", ScalarOutcome.INFO,
-                      variable_name="C40"),
+                      variable_name="C37"),
 
         ScalarOutcome("Energy fossile total", ScalarOutcome.INFO,
-                      variable_name="C42"),
+                      variable_name="C39"),
 
         ScalarOutcome("Energy total", ScalarOutcome.INFO,
-                      variable_name="C44"),
+                      variable_name="C41"),
 
         ScalarOutcome("Electrified VKT share light vehicles", ScalarOutcome.INFO,
-                      variable_name="C45"),
+                      variable_name="C42"),
         ScalarOutcome("Electrified VKT share trucks", ScalarOutcome.INFO,
-                      variable_name="C46"),
+                      variable_name="C43"),
         ScalarOutcome("Electric share of total energy", ScalarOutcome.INFO,
-                      variable_name="C47"),
+                      variable_name="C44"),
 
 
         ScalarOutcome("Fossile fuel price relative reference trucks", ScalarOutcome.INFO,
-                      variable_name="C51"),
-        ScalarOutcome("Fossile fuel price relative reference light vehicles", ScalarOutcome.INFO,
                       variable_name="C52"),
+        ScalarOutcome("Fossile fuel price relative reference light vehicles", ScalarOutcome.INFO,
+                      variable_name="C53"),
 
-        ScalarOutcome("Delta tax income", ScalarOutcome.INFO,
-                      variable_name="C50")
+        ScalarOutcome("Delta CS light vehicles", ScalarOutcome.INFO,
+                      variable_name="C47"),
+        ScalarOutcome("Delta CS trucks", ScalarOutcome.INFO,
+                      variable_name="C48"),
+        ScalarOutcome("Delta CS total", ScalarOutcome.INFO,
+                      variable_name="C49"),
+        ScalarOutcome("Delta tax income total", ScalarOutcome.INFO,
+                      variable_name="C50"),
+        ScalarOutcome("Delta CS tax", ScalarOutcome.INFO,
+                      variable_name="C51")
     ]
 
     # scenarios=[scenarios,reference]
@@ -178,7 +186,7 @@ if __name__ == "__main__":
         reference = Scenario("Reference", **mid_case)
         scenario_list.append(reference)
         # Sample additional scenarios
-        nr_scenarios_per_uncertainty = 1
+        nr_scenarios_per_uncertainty = 0.1
         nr_scenarios = int(nr_scenarios_per_uncertainty *
                            len(model.uncertainties.keys()))  # select number of scenarios (per policy)
         scenarios = samplers.sample_uncertainties(model, nr_scenarios, sampler=samplers.LHSSampler())

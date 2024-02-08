@@ -21,20 +21,22 @@ import seaborn as sns
 # %% Load and prepare data
 
 #policy_types=["All levers", "No transport efficient society"]
-# policy_types = ["No transport efficient society"]  # ,
-policy_types = ["All levers"]
-date = '2023-12-30'  # Specify date the MORDM MOEA was started
+policy_types = ["No transport efficient society"]  # ,
+#policy_types = ["All levers"]
+date = '2024-02-05'  # Specify date the MORDM MOEA was started
 date_archive = date
-nfe_MOEA = 1000000  # Specify the number of nfes used for the MORDM MOEA
+nfe_MOEA = 1000  # Specify the number of nfes used for the MORDM MOEA
 
 all_archives = []
 
 for policy_type in policy_types:
     archives = ArchiveLogger.load_archives(
         f"./archives/{str(nfe_MOEA)}_{policy_type}_{date_archive}.tar.gz")  # load archive
-    model_filename = './output_data/'+policy_type + str(nfe_MOEA)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
+    model_filename = './output_data/moea_results/'+policy_type + \
+        str(nfe_MOEA)+"_nfe_"+"directed_search_MORDM_"+date+"model_.p"
     model = pickle.load(open(model_filename, "rb"))  # Load model
-    results_filename = './output_data/'+policy_type+str(nfe_MOEA)+"_nfe_"+"directed_search_MORDM_"+date+".p"
+    results_filename = './output_data/moea_results/'+policy_type + \
+        str(nfe_MOEA)+"_nfe_"+"directed_search_MORDM_"+date+".p"
     results_list, convergence_list, scenarios, epsilons = pickle.load(open(results_filename, "rb"))
     results_final = results_list[0]
 

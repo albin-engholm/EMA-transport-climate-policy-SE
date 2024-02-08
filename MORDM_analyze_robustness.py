@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jun 12 14:18:42 2023
-
+Script for performing uncertainty and robustness analysis.
 @author: aengholm
 """
 import math
@@ -9,6 +9,7 @@ import pickle
 import statistics
 import pandas as pd
 import numpy as np
+import re
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 import scipy.stats as stats
 import matplotlib.patches as patches
@@ -28,8 +29,8 @@ load_results = 1
 load_results = 1
 if load_results == 1:
     from ema_workbench import load_results
-    date = "2024-01-05"
-    n_scenarios = 2100
+    date = "2024-02-08"
+    n_scenarios = 21
     # for policy_type in policy_types:
     t1 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}.p"
 
@@ -93,20 +94,20 @@ if load_results == 1:
     color_coding = {
         "All levers": '#0005CC',
         "No transport efficient society": '#05CC00',
-        "Trv": '#CC0005'}
+        "STA": '#CC0005'}
     light_color_coding = {
         "All levers": '#6064CC',
         "No transport efficient society": '#7ECC60',
-        "Trv": '#C77F5D'
+        "STA": '#C77F5D'
     }
 
     ultra_light_color_coding = {
         "All levers": '#EDEDFF',
         "No transport efficient society": '#EDFFED',
-        "Trv": '#FFEDED'
+        "STA": '#FFEDED'
     }
-    df_full_trv = df_full[df_full["Policy type"] == "Trv"]
-    df_trv_levers = df_full_trv[list(levers)+["policy"]].drop_duplicates()
+    df_full_sta = df_full[df_full["Policy type"] == "STA"]
+    df_sta_levers = df_full_sta[list(levers)+["policy"]].drop_duplicates()
 # %% Visualization of reference scenario performance
 df_reference_subset = df_full[(df_full["scenario"] == "Reference") & (df_full["Uncertainty set"] == "XP")]
 
@@ -116,17 +117,17 @@ for item in objective_outcomes:
     limits_outcomes.loc[1, item] = max(df_reference_subset[item])  # Get upper bound
 paraxes = parcoords.ParallelAxes(limits_outcomes, formatter={"maxima": ".1f", "minima": ".1f"}, fontsize=20, rot=90)
 
-trv_policies = df_full[(df_full["Policy type"] == "Trv")]["policy"].unique()
+sta_policies = df_full[(df_full["Policy type"] == "STA")]["policy"].unique()
 # Plot selected policies with the manually specified colors
 for idx, policy_type in enumerate(df_reference_subset['Policy type'].unique()):
     selected_data = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
     lines = paraxes.plot(selected_data, label=f'{policy_type}', color=color_coding[policy_type], linewidth=2)
-    # Annotate only the lines with 'Trv' policy type
-    if policy_type == 'Trv':
+    # Annotate only the lines with 'STA' policy type
+    if policy_type == 'STA':
         # Get the axis limits for the last outcome
         last_axis_limits = paraxes.limits[objective_outcomes[-1]]
 
-        for i, (line, policy_name) in enumerate(zip(selected_data[objective_outcomes].values, trv_policies)):
+        for i, (line, policy_name) in enumerate(zip(selected_data[objective_outcomes].values, sta_policies)):
             # Normalize the y-position within the last axis limits
             y_value = line[-1]  # This is the data value at the last axis
             y_relative = (y_value - last_axis_limits[0]) / (last_axis_limits[1] - last_axis_limits[0])
@@ -143,7 +144,7 @@ for idx, policy_type in enumerate(df_reference_subset['Policy type'].unique()):
             text = policy_name
             fontsize = 18
             paraxes.fig.text(x_relative, y_relative, text, transform=last_axis_transform,
-                             fontsize=fontsize, color=color_coding["Trv"], ha='left', va='center',
+                             fontsize=fontsize, color=color_coding["STA"], ha='left', va='center',
                              bbox=dict(facecolor='white', alpha=0, edgecolor='none', boxstyle='round,pad=0.2'))
 
 # Get the figure that parcoords is using
@@ -183,7 +184,7 @@ parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_outcomes.pn
 df_reference_subset = df_reference_subset.copy()
 df_reference_subset['Policy type'] = df_reference_subset['Policy type'].astype('category')
 df_reference_subset['Policy type'] = df_reference_subset['Policy type'].cat.reorder_categories(
-    ['Trv', 'All levers', 'No transport efficient society'], ordered=True
+    ['STA', 'All levers', 'No transport efficient society'], ordered=True
 )
 # Now create the pairplot.
 g = sns.pairplot(
@@ -266,19 +267,19 @@ parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_levers.png"
 plt.figure(figsize=(8, 5))
 sns.scatterplot(data=df_full[df_full["scenario"] == "Reference"], x='Electrified VKT share light vehicles',
                 y='M4_energy_use_bio', hue="Policy type", palette=color_coding, legend=False, s=25)
-# Annotating trv policies
+# Annotating STA policies
 bbox_props = dict(boxstyle="round,pad=0.1", fc="white", ec="none", lw=0, alpha=0.5)
 
-for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
-    df_trv_policy = df_full[df_full['policy'] == trv_policy]
+for sta_policy in df_full[df_full["Policy type"] == "STA"]["policy"].unique():
+    df_sta_policy = df_full[df_full['policy'] == sta_policy]
 
     plt.annotate(
-        trv_policy,
-        (df_trv_policy["Electrified VKT share light vehicles"].values[0],
-         df_trv_policy["M4_energy_use_bio"].values[0]),
+        sta_policy,
+        (df_sta_policy["Electrified VKT share light vehicles"].values[0],
+         df_sta_policy["M4_energy_use_bio"].values[0]),
         textcoords="offset points",
         xytext=(0, -15),
-        ha='center', color=color_coding["Trv"], fontsize=12, bbox=bbox_props
+        ha='center', color=color_coding["STA"], fontsize=12, bbox=bbox_props
     )
 plt.axvline(x=0.68, linestyle="--", color="black", linewidth=1, zorder=10)
 plt.text(s="X6_car_electrification_rate: 0.68", x=0.68+.001, y=4, color="black")
@@ -314,16 +315,16 @@ for policy_type in ['All levers', 'No transport efficient society']:
         label=policy_type
     )
 
-for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
-    df_trv_policy = df_full[df_full['policy'] == trv_policy]
+for sta_policy in df_full[df_full["Policy type"] == "STA"]["policy"].unique():
+    df_sta_policy = df_full[df_full['policy'] == sta_policy]
 
     plt.annotate(
-        trv_policy,
-        (df_trv_policy["Electrified VKT share light vehicles"].values[0],
-         df_trv_policy["M4_energy_use_bio"].values[0]),
+        sta_policy,
+        (df_sta_policy["Electrified VKT share light vehicles"].values[0],
+         df_sta_policy["M4_energy_use_bio"].values[0]),
         textcoords="offset points",
         xytext=(0, -15),
-        ha='center', color=color_coding["Trv"], fontsize=12, bbox=bbox_props
+        ha='center', color=color_coding["STA"], fontsize=12, bbox=bbox_props
     )
 
 # Add reference line and text - you can continue to use your existing code here
@@ -443,8 +444,8 @@ for policy in all_policies:
 
 policy_metrics_df = pd.DataFrame(metrics_data)
 policy_metrics_df_long = pd.DataFrame(long_metrics_data)
-policy_metrics_trv = policy_metrics_df[policy_metrics_df["Policy type"] == "Trv"]
-policy_metrics_trv_long = policy_metrics_df_long[policy_metrics_df_long["Policy type"] == "Trv"]
+policy_metrics_sta = policy_metrics_df[policy_metrics_df["Policy type"] == "STA"]
+policy_metrics_sta_long = policy_metrics_df_long[policy_metrics_df_long["Policy type"] == "STA"]
 # %% visualize relationship between robustness metrics
 # Use Whitegrid
 sns.set_style("whitegrid")
@@ -590,7 +591,7 @@ for robustness_metric in robustness_metrics:
         # Define your color coding for the legend
         labels = list(color_coding.keys())
         legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
-        trv_policies = df_full[(df_full["Policy type"] == "Trv")]["policy"].unique().tolist()
+        sta_policies = df_full[(df_full["Policy type"] == "STA")]["policy"].unique().tolist()
 
         # Loop over rows in dataframe. Plot all policies
         for i, row in policy_metrics_subset.iterrows():
@@ -604,7 +605,7 @@ for robustness_metric in robustness_metrics:
         count = 0
         for i, row in policy_metrics_subset.iterrows():
             policy_type = row["Policy type"]
-            if policy_type == 'Trv':
+            if policy_type == 'STA':
                 row_renamed = row.rename(rename_dict)
                 data = row_renamed[key_outcomes]
                 color = color_coding[policy_type]
@@ -686,10 +687,10 @@ for metric in metrics:
             lambda x: (x - x.min()) / (x.max() - x.min()), axis=0)
         subset_uncertainty['sum_metric'] = normalized_data.sum(axis=1)
 
-        # Determine top 5 policies for this metric and uncertainty set, for each policy type, excluding "Trv"
+        # Determine top 5 policies for this metric and uncertainty set, for each policy type, excluding "STA"
         top_policies = []
         for ptype in color_coding.keys():
-            if ptype != "Trv":
+            if ptype != "STA":
                 ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"]
                                                     == ptype].nsmallest(5, 'sum_metric').index.tolist()
                 top_policies.extend(ptype_policies)
@@ -718,7 +719,7 @@ for metric in metrics:
             linewidth = linewidth_list[index]
             zorder = zorder_list[index]
             paraxes.plot(data.iloc[0], color=color, alpha=alpha, linewidth=linewidth, zorder=zorder)
-            # Annotate only the lines with 'Trv' policy type
+            # Annotate only the lines with 'STA' policy type
 
         plt.legend(handles=legend_elements, loc='upper right')
         #plt.title(f"Metric: {metric}, Uncertainty set: {uncertainty_set}")
@@ -727,12 +728,12 @@ for metric in metrics:
 
 plt.rcParams["figure.figsize"] = original_figsize
 
-# %% Analyze whether we can find a policy that is more robust in all outcomes for all TRV policies
+# %% Analyze whether we can find a policy that is more robust in all outcomes for all STA policies
 
 # Assuming policy_metrics_df is a pre-defined DataFrame and metrics is a list of metrics
-policy_metrics_df_trv = policy_metrics_df[policy_metrics_df["Policy type"] == "Trv"]
+policy_metrics_df_sta = policy_metrics_df[policy_metrics_df["Policy type"] == "STA"]
 
-# Initialize columns for each metric to indicate if a policy is better than all TRV policies
+# Initialize columns for each metric to indicate if a policy is better than all STA policies
 for metric in metrics:
     policy_metrics_df[f"{metric}_Is_Better"] = False
 
@@ -740,55 +741,55 @@ for policy in policy_metrics_df["policy"].unique():
     policy_data = policy_metrics_df[policy_metrics_df["policy"] == policy]
 
     for metric in metrics:
-        is_metric_better_for_all_trv = True
+        is_metric_better_for_all_sta = True
 
         dynamic_outcomes = [f"{metric} {outcome}" for outcome in key_outcomes]
 
-        for trv_policy in policy_metrics_df_trv["policy"].unique():
-            trv_policy_data = policy_metrics_df_trv[policy_metrics_df_trv["policy"] == trv_policy]
+        for sta_policy in policy_metrics_df_sta["policy"].unique():
+            sta_policy_data = policy_metrics_df_sta[policy_metrics_df_sta["policy"] == sta_policy]
 
-            is_better_for_this_trv_policy = True
+            is_better_for_this_sta_policy = True
             for outcome in dynamic_outcomes:
                 policy_outcome_value = policy_data[outcome].values[0] if not policy_data[outcome].empty else None
-                trv_outcome_value = trv_policy_data[outcome].values[0] if not trv_policy_data[outcome].empty else None
+                sta_outcome_value = sta_policy_data[outcome].values[0] if not sta_policy_data[outcome].empty else None
 
-                if policy_outcome_value is None or trv_outcome_value is None or not (policy_outcome_value < trv_outcome_value):
-                    is_better_for_this_trv_policy = False
+                if policy_outcome_value is None or sta_outcome_value is None or not (policy_outcome_value < sta_outcome_value):
+                    is_better_for_this_sta_policy = False
                     break
 
-            if not is_better_for_this_trv_policy:
-                is_metric_better_for_all_trv = False
+            if not is_better_for_this_sta_policy:
+                is_metric_better_for_all_sta = False
                 break
 
         # Update the DataFrame
         policy_metrics_df.loc[policy_metrics_df["policy"] == policy,
-                              f"{metric}_Is_Better"] = is_metric_better_for_all_trv
+                              f"{metric}_Is_Better"] = is_metric_better_for_all_sta
 
 policy_metrics_df
-# %% Prepare data for in-dpeth analysis of TRV policies
+# %% Prepare data for in-dpeth analysis of STA policies
 columns_90th_percentile = [
-    col for col in policy_metrics_trv.columns if '90_percentile_deviation' in col and 'normalized' not in col]
+    col for col in policy_metrics_sta.columns if '90_percentile_deviation' in col and 'normalized' not in col]
 
 columns_90th_percentile.append("policy")
-policy_metrics_trv_90 = policy_metrics_trv[columns_90th_percentile]
-# Set "policy" column as the index for policy_metrics_trv_90
-policy_metrics_trv_90.set_index("policy", inplace=True)
+policy_metrics_sta_90 = policy_metrics_sta[columns_90th_percentile]
+# Set "policy" column as the index for policy_metrics_sta_90
+policy_metrics_sta_90.set_index("policy", inplace=True)
 # Extract the "Mean/stdev M...." columns
-columns_mean_stdev = [col for col in policy_metrics_trv.columns if (
+columns_mean_stdev = [col for col in policy_metrics_sta.columns if (
     ('Mean_stdev' in col) & ("normalized" not in col) & ("sum" not in col))]+["policy"]
 
-policy_metrics_mean_stdev = policy_metrics_trv[columns_mean_stdev]
+policy_metrics_mean_stdev = policy_metrics_sta[columns_mean_stdev]
 policy_metrics_mean_stdev.set_index("policy", inplace=True)
 
-df_full_trv = df_full[df_full["scenario"] == "Reference"]
-df_full_trv = df_full_trv[df_full_trv["Policy type"] == "Trv"][key_outcomes+["policy"]]
-# Set "policy" column as the index for df_full_trv
-df_full_trv.set_index("policy", inplace=True)
+df_full_sta = df_full[df_full["scenario"] == "Reference"]
+df_full_sta = df_full_sta[df_full_sta["Policy type"] == "STA"][key_outcomes+["policy"]]
+# Set "policy" column as the index for df_full_sta
+df_full_sta.set_index("policy", inplace=True)
 
 
-df_trv = pd.concat([df_full_trv, policy_metrics_trv_90], axis=1)
-df_trv = pd.concat([df_trv, policy_metrics_mean_stdev], axis=1)
-df_trv["policy"] = df_trv.index
+df_sta = pd.concat([df_full_sta, policy_metrics_sta_90], axis=1)
+df_sta = pd.concat([df_sta, policy_metrics_mean_stdev], axis=1)
+df_sta["policy"] = df_sta.index
 
 x_vars = key_outcomes
 y_vars = ['90_percentile_deviation M1_CO2_TTW_total',
@@ -801,7 +802,7 @@ y_vars += columns_mean_stdev
 # Create a FacetGrid with scatterplots for each metric
 
 # Your existing code for creating df_long
-df_long = pd.melt(df_trv, id_vars=["policy"],
+df_long = pd.melt(df_sta, id_vars=["policy"],
                   value_vars=['M1_CO2_TTW_total', 'M2_driving_cost_car', 'M3_driving_cost_truck',
                               'M4_energy_use_bio', 'M5_energy_use_electricity'],
                   var_name='Metric', value_name='Outcome in reference scenario')
@@ -809,11 +810,11 @@ df_long = pd.melt(df_trv, id_vars=["policy"],
 # Add the 90th percentile deviation values
 # Adjust this based on how your data is structured
 df_long['90th Percentile Deviation'] = df_long.apply(
-    lambda row: df_trv.at[row['policy'], '90_percentile_deviation ' + row['Metric']], axis=1
+    lambda row: df_sta.at[row['policy'], '90_percentile_deviation ' + row['Metric']], axis=1
 )
 
 df_long['Mean_stdev'] = df_long.apply(
-    lambda row: df_trv.at[row['policy'], 'Mean_stdev ' + row['Metric']], axis=1
+    lambda row: df_sta.at[row['policy'], 'Mean_stdev ' + row['Metric']], axis=1
 )
 
 # %%Ranking of reference scenario and 90th percentile deviation
@@ -850,16 +851,16 @@ df_samples["Ranking weighted"] = df_samples.groupby([
     'Metric', "w ref"])["Weighted ranking"].transform(rank_values)
 
 # Plot using FacetGrid
-color_trv_policies = ["green", "lightcoral", "red", "darkred", "coral", "cornflowerblue", "blue", "darkblue"]
+color_sta_policies = ["green", "lightcoral", "red", "darkred", "coral", "cornflowerblue", "blue", "darkblue"]
 g = sns.FacetGrid(df_samples, col='w ref', height=3.5, aspect=1.25, sharex=True, sharey=False)
-g.map(sns.lineplot, 'Metric', 'Ranking weighted', 'policy', marker='o', palette=color_trv_policies)
+g.map(sns.lineplot, 'Metric', 'Ranking weighted', 'policy', marker='o', palette=color_sta_policies)
 
 g.fig.subplots_adjust(hspace=0.8, wspace=0.3)
 # Enhancing the plot
 g.set_xticklabels(rotation=90)
 plt.subplots_adjust(top=0.9)
 #g.fig.suptitle('Weighted Ranking of Policies for Different w_ref Values 90th percentile dev', size=16)
-g.add_legend(title="Trv policy", bbox_to_anchor=(0.5, 1.02), loc='center right', borderaxespad=0.1, ncol=8)
+g.add_legend(title="STA policy", bbox_to_anchor=(0.5, 1.02), loc='center right', borderaxespad=0.1, ncol=8)
 g.set_titles(col_template="Reference scenario performance weight: {col_name}", row_template="{row_name}")
 g.set_axis_labels("", "Ranking")
 plt.show()
@@ -915,38 +916,38 @@ def reference_robustness_scatter_plot(df, y_variable, plot_title):
 
 
 for robustness_metric, plot_title in [
-    ('90th Percentile Deviation', 'Trv policies: 90th percentile deviation vs reference scenario performance'),
-    ('Mean_stdev', 'Trv policies: Mean-stdev vs reference scenario performance')
+    ('90th Percentile Deviation', 'STA policies: 90th percentile deviation vs reference scenario performance'),
+    ('Mean_stdev', 'STA policies: Mean-stdev vs reference scenario performance')
 ]:
     reference_robustness_scatter_plot(df_long, robustness_metric, plot_title)
 # %% Visualie relationship between mean and stdev
 for metric in key_outcomes:
     plt.figure()
-    sns.scatterplot(policy_metrics_trv, x=f"Mean {metric}", y=f"Standard deviation {metric}", hue="policy")
+    sns.scatterplot(policy_metrics_sta, x=f"Mean {metric}", y=f"Standard deviation {metric}", hue="policy")
 
 # %% Vulnerability analysis
 # Policies selected for analysis
-vulnerability_policies = [291, 3051, "B"]
+# vulnerability_policies = [291, 3051, "B"]
 
-# Parcoords of vulnerability policies
-paraxes = parcoords.ParallelAxes(limits_levers, formatter={"maxima": ".1f", "minima": ".1f"}, fontsize=20, rot=90)
-# Plot selected policies with the manually specified colors
-for idx, policy in enumerate(vulnerability_policies):
-    selected_data = df_full[df_full['policy'] == str(policy)].iloc[0]
-    policy_type = selected_data["Policy type"]
-    paraxes.plot(selected_data, label=f'Policy type: {policy_type}', color=color_coding[policy_type])
+# # Parcoords of vulnerability policies
+# paraxes = parcoords.ParallelAxes(limits_levers, formatter={"maxima": ".1f", "minima": ".1f"}, fontsize=20, rot=90)
+# # Plot selected policies with the manually specified colors
+# for idx, policy in enumerate(vulnerability_policies):
+#     selected_data = df_full[df_full['policy'] == str(policy)].iloc[0]
+#     policy_type = selected_data["Policy type"]
+#     paraxes.plot(selected_data, label=f'Policy type: {policy_type}', color=color_coding[policy_type])
 
-# Get the figure that parcoords is using
-parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
-# for ax in paraxes.axes:
-#     ax.set_xticklabels([])  # This removes the x-axis tick labels
-#     ax.set_yticklabels([])  #
-# Set figure size and facecolor
-parcoords_fig.set_size_inches(10, 10)
-# parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
+# # Get the figure that parcoords is using
+# parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
+# # for ax in paraxes.axes:
+# #     ax.set_xticklabels([])  # This removes the x-axis tick labels
+# #     ax.set_yticklabels([])  #
+# # Set figure size and facecolor
+# parcoords_fig.set_size_inches(10, 10)
+# # parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
 
-# Optionally, you can add a legend if you need it
-paraxes.legend()
+# # Optionally, you can add a legend if you need it
+# paraxes.legend()
 
 # %% Find most common vulnerabilities
 
@@ -1120,7 +1121,7 @@ top_combinations.reset_index(drop=True, inplace=True)
 # Show the DataFrame
 print(top_combinations)
 # %% Vulnerability analysis and comparison comapred to policy B
-vulnerability_analysis_policy = "B"  # 99 All levers, #183 no transport efficiency "B" TRV
+vulnerability_analysis_policy = "B"  # 99 All levers, #183 no transport efficiency "B" STA
 
 df_v = df_full[df_full["policy"].astype(str) == str(vulnerability_analysis_policy)]
 df_v = df_v[df_v["scenario"] != "Reference"]
@@ -1267,12 +1268,12 @@ sns.scatterplot(
 )
 sns.despine()
 # Annotating and emphasizing the policy named "B"
-for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
-    df_trv_policy = df_policy_vulnerabilities[df_policy_vulnerabilities['policy'] == trv_policy]
-    # if trv_policy == "B":
+for sta_policy in df_full[df_full["Policy type"] == "STA"]["policy"].unique():
+    df_sta_policy = df_policy_vulnerabilities[df_policy_vulnerabilities['policy'] == sta_policy]
+    # if sta_policy == "B":
     #     plt.scatter(
-    #         df_trv_policy["Coverage"],
-    #         df_trv_policy["Density"],
+    #         df_sta_policy["Coverage"],
+    #         df_sta_policy["Density"],
     #         color='red',  # Or any color that makes it stand out
     #         s=100,          # Size of the marker
     #         #label='Policy B',
@@ -1282,11 +1283,11 @@ for trv_policy in df_full[df_full["Policy type"] == "Trv"]["policy"].unique():
     #     )
 
     plt.annotate(
-        trv_policy,
-        (df_trv_policy["Coverage"].values[0], df_trv_policy["Density"].values[0]),
+        sta_policy,
+        (df_sta_policy["Coverage"].values[0], df_sta_policy["Density"].values[0]),
         textcoords="offset points",
         xytext=(0, -13),
-        ha='center', color=color_coding["Trv"]
+        ha='center', color=color_coding["STA"]
     )
 
 # Show the legend
@@ -1294,19 +1295,47 @@ plt.legend(title='')
 #plt.title('Density vs Coverage by Policy Type')
 plt.legend(frameon=False)
 plt.show()
+# %% Feature scorings
 
-# %% Feature scoring
+
+def alphanumeric_sorter(key):
+    def convert(text): return int(text) if text.isdigit() else text.lower()
+    def alphanum_key(k): return [convert(c) for c in re.split('([0-9]+)', k)]
+    return alphanum_key(key)
+
+
+# Prepare your data
+x_raw = experiments.drop(columns=["Policy type", "policy", "model"])
+sorted_columns = sorted(x_raw.columns, key=alphanumeric_sorter)
+x_sorted = x_raw[sorted_columns]
+
+# Define outcomes and calculate feature scores
+keys_to_include = outcomes
+y = {key: value for key, value in outcomes_xp.items() if key in keys_to_include}
+fs = feature_scoring.get_feature_scores_all(x_sorted, y)
+
+# Sort both the index and columns of the fs DataFrame using the alphanumeric sorter
+fs_sorted = fs.sort_index(key=alphanumeric_sorter)
+sorted_fs_columns = sorted(fs_sorted.columns, key=alphanumeric_sorter)
+fs_sorted = fs_sorted[sorted_fs_columns]
+print(fs_sorted.index)  # Should show the sorted feature names
+print(fs_sorted.columns)  # Should show the sorted outcome names
+# Now create the heatmap
+sns.heatmap(fs_sorted, cmap="viridis", annot=True, fmt=".0%")
+
+
 # all X and L on all outcomes
-x = experiments
-y = outcomes_xp
+x = experiments.drop(columns=["Policy type", "policy", "model"])
+keys_to_remove = ["Delta CS light vehicles", "Delta CS trucks", "Delta CS total", "Delta tax increase total"]
+y = {key: value for key, value in outcomes_xp.items() if key not in keys_to_remove}
 
 fs = feature_scoring.get_feature_scores_all(x, y)
 sns.heatmap(fs, cmap="viridis", annot=True)
 plt.show()
 
 # all X and L on all outcomes
-x = experiments.drop_columns(["model", "policy"])
-y = outcomes_xp['M1_CO2_TTW_total'] > 1.89
+x = experiments.drop(columns=["Policy type", "policy", "model"])
+y = pd.DataFrame(outcomes_xp['M1_CO2_TTW_total'] > 1.89).to_dict()
 
 fs = feature_scoring.get_feature_scores_all(x, y)
 sns.heatmap(fs, cmap="viridis", annot=True)
@@ -1363,7 +1392,7 @@ for metric in metrics:
             lambda x: (x - x.min()) / (x.max() - x.min()), axis=0)
         subset_uncertainty['sum_metric'] = normalized_data.sum(axis=1)
 
-        # Determine top 5 policies for this metric and uncertainty set, for each policy type including "Trv"
+        # Determine top 5 policies for this metric and uncertainty set, for each policy type including "STA"
         top_policies = []
         for ptype in color_coding.keys():
             ptype_policies = subset_uncertainty[subset_uncertainty["Policy type"]
