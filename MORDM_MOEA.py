@@ -41,9 +41,9 @@ if __name__ == "__main__":
     nfe = 1000  # Set number of nfes  in optimization
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
-    #policy_types = ["All levers", "No transport efficient society"]
-    #policy_types = ["No transport efficient society"]
-    policy_types = ["All levers"]
+    policy_types = ["All levers", "No transport efficiency"]
+    #policy_types = ["No transport efficiency"]
+    #policy_types = ["All levers"]
 
     # Optimization parameters
     # Set epsilons
@@ -215,7 +215,7 @@ if __name__ == "__main__":
                          .17,)
             ]
 
-        if policy_type == "No transport efficient society":
+        if policy_type == "No transport efficiency":
 
             model.levers.clear()
             model.levers = base_levers
@@ -277,7 +277,7 @@ if __name__ == "__main__":
                 results["L8_additional_truck_energy_efficiency"] = 0.05
                 results["L9_transport_efficient_planning_cars"] = 0.26
                 results["L10_transport_efficient_planning_trucks"] = 0.17
-            elif policy_type == "No transport efficient society":
+            elif policy_type == "No transport efficiency":
                 model.levers = [
                     RealParameter("L7_additional_car_energy_efficiency",
                                   0.0, .001, variable_name="C72"),

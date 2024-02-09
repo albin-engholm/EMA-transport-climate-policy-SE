@@ -17,11 +17,11 @@ if __name__ == "__main__":
     # %% Load candidate policies and model from previous optimization
     import pandas as pd
     df_full = pd.DataFrame()
-    policy_types = ["All levers", "No transport efficient society"]
-    # policy_types = ["All levers"]  # ,"No transport efficient society"]
+    policy_types = ["All levers", "No transport efficiency"]
+    # policy_types = ["All levers"]  # ,"No transport efficiency"]
     load_results = 1
     if load_results == 1:
-        date = "2024-02-08"
+        date = "2024-02-09"
         nfe = 1000
         for idx, policy_type in enumerate(policy_types):
             if idx == 0:
@@ -39,7 +39,7 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if idx == 1:
-                date = "2024-02-08"
+                date = "2024-02-09"
                 nfe = 1000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'

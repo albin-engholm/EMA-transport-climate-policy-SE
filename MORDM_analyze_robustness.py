@@ -22,14 +22,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_context("paper")
 
-policy_types = ["All levers", "No transport efficient society"]
+policy_types = ["All levers", "No transport efficiency"]
 # policy_types=["All levers"]
-# ,"No transport efficient society"]
+# ,"No transport efficiency"]
 load_results = 1
 load_results = 1
 if load_results == 1:
     from ema_workbench import load_results
-    date = "2024-02-08"
+    date = "2024-02-09"
     n_scenarios = 21
     # for policy_type in policy_types:
     t1 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}.p"
@@ -93,17 +93,17 @@ if load_results == 1:
     # Define color coding mapping
     color_coding = {
         "All levers": '#0005CC',
-        "No transport efficient society": '#05CC00',
+        "No transport efficiency": '#05CC00',
         "STA": '#CC0005'}
     light_color_coding = {
         "All levers": '#6064CC',
-        "No transport efficient society": '#7ECC60',
+        "No transport efficiency": '#7ECC60',
         "STA": '#C77F5D'
     }
 
     ultra_light_color_coding = {
         "All levers": '#EDEDFF',
-        "No transport efficient society": '#EDFFED',
+        "No transport efficiency": '#EDFFED',
         "STA": '#FFEDED'
     }
     df_full_sta = df_full[df_full["Policy type"] == "STA"]
@@ -184,7 +184,7 @@ parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_outcomes.pn
 df_reference_subset = df_reference_subset.copy()
 df_reference_subset['Policy type'] = df_reference_subset['Policy type'].astype('category')
 df_reference_subset['Policy type'] = df_reference_subset['Policy type'].cat.reorder_categories(
-    ['STA', 'All levers', 'No transport efficient society'], ordered=True
+    ['STA', 'All levers', 'No transport efficiency'], ordered=True
 )
 # Now create the pairplot.
 g = sns.pairplot(
@@ -301,7 +301,7 @@ sns.scatterplot(
 
 # Then, draw regression lines for two specific policy types
 # You'll need to adjust 'PolicyType1' and 'PolicyType2' to match your actual policy type names
-for policy_type in ['All levers', 'No transport efficient society']:
+for policy_type in ['All levers', 'No transport efficiency']:
     # Filter the data
     df_subset = df_full[(df_full["scenario"] == "Reference") & (df_full["Policy type"] == policy_type)]
 
@@ -528,18 +528,18 @@ for robustness_metric in robustness_metrics:
         robustness_metric_outcomes.append(f"{robustness_metric} {outcome}")
     sns.pairplot(policy_metrics_df, x_vars=robustness_metric_outcomes,
                  y_vars=robustness_metric_outcomes, hue="Policy type", palette=color_coding)
-# %% Perform statistical test of robustness metrics differences ALl levers No transport efficient society
+# %% Perform statistical test of robustness metrics differences ALl levers No transport efficiency
 for robustness_metric in robustness_metrics:
     for outcome in key_outcomes:
 
         # Filter data for the two specific policy types
         filtered_data = policy_metrics_df_long[policy_metrics_df_long['Policy type'].isin(
-            ['All levers', 'No transport efficient society'])]
+            ['All levers', 'No transport efficiency'])]
 
         # Statistical Test - Mann-Whitney U Test
         group1 = filtered_data[(filtered_data['Policy type'] == 'All levers') & (
             filtered_data['Outcome'] == outcome) & (filtered_data["Robustness metric"] == f"{robustness_metric}")]
-        group2 = filtered_data[(filtered_data['Policy type'] == 'No transport efficient society') & (
+        group2 = filtered_data[(filtered_data['Policy type'] == 'No transport efficiency') & (
             filtered_data['Outcome'] == outcome) & (filtered_data["Robustness metric"] == f"{robustness_metric}")]
 
         # Calculate Descriptive Statistics
@@ -549,7 +549,7 @@ for robustness_metric in robustness_metrics:
         print(
             f"{robustness_metric} {outcome} - All levers: Median = {group1_stats.loc['50%'][0]}, Mean = {group1_stats.loc['mean'][0]}")
         print(
-            f"{robustness_metric} {outcome} - No transport efficient society: Median = {group2_stats.loc['50%'][0]}, Mean = {group2_stats.loc['mean'][0]}")
+            f"{robustness_metric} {outcome} - No transport efficiency: Median = {group2_stats.loc['50%'][0]}, Mean = {group2_stats.loc['mean'][0]}")
 
         # Perform the test (use alternative='two-sided' for a two-tailed test)
         u_statistic, p_value = stats.mannwhitneyu(
@@ -1346,14 +1346,14 @@ plt.show()
 # Define your color coding for the legend
 color_coding = {
     "All levers": '#610100',
-    "No transport efficient society": '#E9C2C0',
+    "No transport efficiency": '#E9C2C0',
 
 }
 
 # Create a dictionary for the light colors
 light_color_coding = {
     "All levers": 'lightgrey',
-    "No transport efficient society": 'lightgrey',
+    "No transport efficiency": 'lightgrey',
 }
 
 # Save the original default size
@@ -1369,7 +1369,7 @@ outcomes = [
 ]
 metrics = ["Mean/stdev"]
 policy_metrics_df2 = policy_metrics_df[(policy_metrics_df["Policy type"] == "All levers") | (
-    policy_metrics_df["Policy type"] == "No transport efficient society")]
+    policy_metrics_df["Policy type"] == "No transport efficiency")]
 # 1. Normalize the metrics for each outcome
 for metric in metrics:
     policy_metrics_df[f"sum_normalized_{metric}"] = 0  # initialize at 0

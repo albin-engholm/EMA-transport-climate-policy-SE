@@ -15,15 +15,15 @@ if __name__ == "__main__":
     # %% Load candidate policies and model from previous optimization
     import pandas as pd
     df_full = pd.DataFrame()
-    policy_types = ["All levers", "No transport efficient society"]
-    # policy_types = ["All levers"]  # ,"No transport efficient society"]
+    policy_types = ["All levers", "No transport efficiency"]
+    # policy_types = ["All levers"]  # ,"No transport efficiency"]
     load_results = 1
     if load_results == 1:
 
         count = 0
         for policy_type in policy_types:
             if count == 0:
-                date = "2024-02-08"
+                date = "2024-02-09"
                 nfe = 1000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 import pickle
@@ -38,7 +38,7 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if count == 1:
-                date = "2024-02-08"
+                date = "2024-02-09"
                 nfe = 1000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 import pickle
@@ -52,7 +52,7 @@ if __name__ == "__main__":
             count = count+1
 
         # Load candidate policy dataframe
-        date = "2024-02-08"
+        date = "2024-02-09"
         nfe = 1000
         filename = f"./output_data/candidate_policies/{date}_{nfe}candidate_policies.p"
         candidate_policy_data = pickle.load(open(filename, "rb"))

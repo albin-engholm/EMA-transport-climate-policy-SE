@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 # %% Load and prepare data
 
-#policy_types=["All levers", "No transport efficient society"]
-policy_types = ["No transport efficient society"]  # ,
+#policy_types=["All levers", "No transport efficiency"]
+policy_types = ["No transport efficiency"]  # ,
 #policy_types = ["All levers"]
 date = '2024-02-05'  # Specify date the MORDM MOEA was started
 date_archive = date
