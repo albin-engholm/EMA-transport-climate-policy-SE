@@ -21,8 +21,8 @@ if __name__ == "__main__":
     # policy_types = ["All levers"]  # ,"No transport efficiency"]
     load_results = 1
     if load_results == 1:
-        date = "2024-02-09"
-        nfe = 1000
+        date = "2024-02-12"
+        nfe = 2500
         for idx, policy_type in enumerate(policy_types):
             if idx == 0:
                 t1 = f'./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p'
@@ -39,8 +39,8 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if idx == 1:
-                date = "2024-02-09"
-                nfe = 1000
+                date = "2024-02-12"
+                nfe = 2500
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
@@ -547,7 +547,7 @@ if __name__ == "__main__":
     #df_candidate_policies = df_full.sample(100)
 
     # %% Final random sample
-    n_policies = 100  # Number of policies per policy type
+    n_policies = 50  # Number of policies per policy type
     df_candidate_policies_sampled = pd.DataFrame()
     df_candidate_policies = pd.DataFrame()
     for policy_type in df_full_no_sta["Policy type"].unique():

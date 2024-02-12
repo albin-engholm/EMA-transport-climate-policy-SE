@@ -37,12 +37,12 @@ if __name__ == "__main__":
         sampler = samplers.LHSSampler()
     load_diverse_scenarios = False  # Should a pre-generated set of diverse scenarios be loaded and used as reference?
 
-    n_p = 8  # set # of parallel threads
-    nfe = 1000  # Set number of nfes  in optimization
+    n_p = -3  # set # of parallel threads
+    nfe = 2500  # Set number of nfes  in optimization
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
     policy_types = ["All levers", "No transport efficiency"]
-    #policy_types = ["No transport efficiency"]
+   # policy_types = ["No transport efficiency"]
     #policy_types = ["All levers"]
 
     # Optimization parameters
@@ -205,14 +205,12 @@ if __name__ == "__main__":
             model.levers = base_levers
             model.constants.clear()
             model.constants = default_constants+[
-                Constant("C71",  # "L7_additional_car_energy_efficiency"
-                         .05),
-                Constant("C72",  # "L8_additional_truck_energy_efficiency"
-                         .05),
-                Constant("C73",  # "L9_transport_efficient_planning_cars"
-                         .26, ),
-                Constant("C74",  # L10_transport_efficient_planning_trucks"
-                         .17,)
+                Constant("C71", .05),  # "L7_additional_car_energy_efficiency"
+                Constant("C72", .05),  # "L8_additional_truck_energy_efficiency"
+
+                Constant("C73", .26),  # "L9_transport_efficient_planning_cars"
+                Constant("C74", .17)  # L10_transport_efficient_planning_trucks"
+
             ]
 
         if policy_type == "No transport efficiency":
@@ -223,14 +221,10 @@ if __name__ == "__main__":
             model.constants.clear()
             model.constants = default_constants+[
 
-                Constant("C71",  # "L7_additional_car_energy_efficiency"
-                         .0),
-                Constant("C72",  # "L8_additional_truck_energy_efficiency"
-                         .0),
-                Constant("C73",  # "L9_transport_efficient_planning_cars"
-                         .0, ),
-                Constant("C74",  # L10_transport_efficient_planning_trucks"
-                         .0,)
+                Constant("C71", 0),  # "L7_additional_car_energy_efficiency"
+                Constant("C72", 0),  # "L8_additional_truck_energy_efficiency"
+                Constant("C73", 0),  # "L9_transport_efficient_planning_cars"
+                Constant("C74", 0)  # L10_transport_efficient_planning_trucks"
             ]
 
         for scenario in scenario_list:
@@ -262,32 +256,27 @@ if __name__ == "__main__":
                                                           )
 
             scenario_count = scenario_count+1
+            # Reset model constants
+            model.constants.clear()
+            model.constants = default_constants
+
+            # Add L7-L10 as model levers
+            model.levers = [
+                RealParameter("L7_additional_car_energy_efficiency",
+                              0.0, .05, variable_name="C71"),
+                RealParameter("L8_additional_truck_energy_efficiency",
+                              0.0, .05, variable_name="C72"),
+                RealParameter("L9_transport_efficient_planning_cars",
+                              0, .26, variable_name="C73"),
+                RealParameter("L10_transport_efficient_planning_trucks",
+                              0, .17, variable_name="C74")
+            ]
             if policy_type == "All levers":
-                model.levers = [
-                    RealParameter("L7_additional_car_energy_efficiency",
-                                  0.0499, .05, variable_name="C72"),
-                    RealParameter("L8_additional_truck_energy_efficiency",
-                                  0.0499, .05, variable_name="C73"),
-                    RealParameter("L9_transport_efficient_planning_cars",
-                                  .2599, .26, variable_name="C74"),
-                    RealParameter("L10_transport_efficient_planning_trucks",
-                                  .1699, .17, variable_name="C75")
-                ]
                 results["L7_additional_car_energy_efficiency"] = 0.05
                 results["L8_additional_truck_energy_efficiency"] = 0.05
                 results["L9_transport_efficient_planning_cars"] = 0.26
                 results["L10_transport_efficient_planning_trucks"] = 0.17
             elif policy_type == "No transport efficiency":
-                model.levers = [
-                    RealParameter("L7_additional_car_energy_efficiency",
-                                  0.0, .001, variable_name="C72"),
-                    RealParameter("L8_additional_truck_energy_efficiency",
-                                  0.0, .001, variable_name="C73"),
-                    RealParameter("L9_transport_efficient_planning_cars",
-                                  0, .001, variable_name="C74"),
-                    RealParameter("L10_transport_efficient_planning_trucks",
-                                  0, .001, variable_name="C75")]
-
                 results["L7_additional_car_energy_efficiency"] = 0
                 results["L8_additional_truck_energy_efficiency"] = 0
                 results["L9_transport_efficient_planning_cars"] = 0
@@ -300,9 +289,7 @@ if __name__ == "__main__":
             ax1.set_xlabel('number of function evaluations')
         results_list.append(results)
         convergence_list.append(convergence)
-        # Reset model constants
-        model.constants.clear()
-        model.constants = default_constants
+
         toc = time.perf_counter()
         print("Runtime [s] = " + str(toc-tic))
         print("Runtime [h] = " + str(round((toc-tic)/3600, 1)))

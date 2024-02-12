@@ -29,8 +29,8 @@ load_results = 1
 load_results = 1
 if load_results == 1:
     from ema_workbench import load_results
-    date = "2024-02-09"
-    n_scenarios = 21
+    date = "2024-02-12"
+    n_scenarios = 105
     # for policy_type in policy_types:
     t1 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}.p"
 
@@ -966,7 +966,7 @@ for policy in df_full["policy"].unique():
 
     x = df_v[model.uncertainties.keys()]
     y = df_v["CO2 target not met"]
-    prim_alg = prim.Prim(x, y, threshold=0.9)
+    prim_alg = prim.Prim(x, y, threshold=0.5)
     box1 = prim_alg.find_box()
 
     # Track the found vulnerabilities to avoid duplicates
