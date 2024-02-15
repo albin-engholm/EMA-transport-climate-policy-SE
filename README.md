@@ -5,6 +5,8 @@ EMA_transport_climate_policy_SE supports performing MORDM or other analyses base
 
 The repository has been developed within the research project [MUST: Managing deep Uncertainty in planning for Sustainable Transport](https://www.itrl.kth.se/research/ongoingprojects/must-1.1146492) performed by KTH ITRL and VTI. The primary purpose of EMA_transport_climate_policy_SE is to support a study within the project and not for external use. However, the repo is public  to enable reproduction of an upcoming paper and to serve as inspiration for other projects or applications.
 
+The code is written in Python in a "notebook-like" style.
+
 # Contents
 The repository includes a number of scripts to support MORDM and other EMA-related analyses using the Scenario Tool. The scripts use to perform the MORDM study, which is the core of the research project, have the prefix MORDM. 
 
