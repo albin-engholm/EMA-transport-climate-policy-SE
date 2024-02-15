@@ -7,6 +7,8 @@ The repository has been developed within the research project [MUST: Managing de
 
 The code is written in Python in a "notebook-like" style.
 
+Please note that the repository and research study is WORK IN PROGRESS!
+
 # Contents
 The repository includes a number of scripts to support MORDM and other EMA-related analyses using the Scenario Tool. The scripts use to perform the MORDM study, which is the core of the research project, have the prefix MORDM. 
 
