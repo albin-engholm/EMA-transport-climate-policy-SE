@@ -6,10 +6,9 @@ Created on Mon Jun 12 14:18:42 2023
 """
 from ema_workbench import (RealParameter, CategoricalParameter,
                            ScalarOutcome, ema_logging,
-                           perform_experiments, Constant, Policy)
+                           perform_experiments, Constant, Policy, MultiprocessingEvaluator)
 
 from ema_workbench.connectors.excel import ExcelModel
-from ema_workbench.em_framework.evaluators import MultiprocessingEvaluator
 if __name__ == "__main__":
     ema_logging.log_to_stderr(level=ema_logging.INFO)
     # %% Load candidate policies and model from previous optimization
@@ -162,7 +161,7 @@ if __name__ == "__main__":
         reference = Scenario("Reference", **reference_scenario)
         scenario_list.append(reference)
         # Sample additional scenarios
-        nr_scenarios_per_uncertainty = 5
+        nr_scenarios_per_uncertainty = .05
         nr_scenarios = int(nr_scenarios_per_uncertainty *
                            len(model.uncertainties.keys()))  # select number of scenarios (per policy)
         scenarios = samplers.sample_uncertainties(model, nr_scenarios, sampler=samplers.LHSSampler())

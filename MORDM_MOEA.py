@@ -37,13 +37,13 @@ if __name__ == "__main__":
         sampler = samplers.LHSSampler()
     load_diverse_scenarios = False  # Should a pre-generated set of diverse scenarios be loaded and used as reference?
 
-    n_p = -3  # set # of parallel threads
-    nfe = 2500  # Set number of nfes  in optimization
+    n_p = -4  # set # of parallel threads
+    nfe = 1000  # Set number of nfes  in optimization
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
-    policy_types = ["All levers", "No transport efficiency"]
-   # policy_types = ["No transport efficiency"]
-    #policy_types = ["All levers"]
+    #policy_types = ["All levers", "No transport efficiency"]
+    #policy_types = ["No transport efficiency"]
+    policy_types = ["All levers"]
 
     # Optimization parameters
     # Set epsilons
