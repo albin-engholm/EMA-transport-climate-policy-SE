@@ -29,7 +29,7 @@ load_results = 1
 load_results = 1
 if load_results == 1:
     from ema_workbench import load_results
-    date = "2024-02-12"
+    date = "2024-02-23"
     n_scenarios = 105
     # for policy_type in policy_types:
     t1 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}.p"

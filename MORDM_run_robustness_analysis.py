@@ -22,8 +22,8 @@ if __name__ == "__main__":
         count = 0
         for policy_type in policy_types:
             if count == 0:
-                date = "2024-02-12"
-                nfe = 2500
+                date = "2024-02-16"
+                nfe = 1000000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
@@ -37,8 +37,8 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if count == 1:
-                date = "2024-02-12"
-                nfe = 2500
+                date = "2024-02-19"
+                nfe = 1000000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
@@ -51,8 +51,8 @@ if __name__ == "__main__":
             count = count+1
 
         # Load candidate policy dataframe
-        date = "2024-02-12"
-        nfe = 2500
+        date = "2024-02-19"
+        nfe = 1000000
         filename = f"./output_data/candidate_policies/{date}_{nfe}candidate_policies.p"
         candidate_policy_data = pickle.load(open(filename, "rb"))
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     # scenarios=[scenarios,reference]
     # %% Set up two runs for various uncertainty parameters #Run model - for open exploration
-    n_p = -3
+    n_p = -2
     # Run
     import time
     tic = time.perf_counter()
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         reference = Scenario("Reference", **reference_scenario)
         scenario_list.append(reference)
         # Sample additional scenarios
-        nr_scenarios_per_uncertainty = .05
+        nr_scenarios_per_uncertainty = 5
         nr_scenarios = int(nr_scenarios_per_uncertainty *
                            len(model.uncertainties.keys()))  # select number of scenarios (per policy)
         scenarios = samplers.sample_uncertainties(model, nr_scenarios, sampler=samplers.LHSSampler())
