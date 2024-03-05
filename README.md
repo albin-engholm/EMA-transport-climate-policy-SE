@@ -1,7 +1,7 @@
 # EMA-transport-climate-policy-SE
 The Swedish Transport Administration has developed the [Scenario Tool](https://bransch.trafikverket.se/tjanster/system-och-verktyg/Prognos--och-analysverktyg/scenarioverktyget-for-styrmedelsanalyser/), a model to support analyses of how different types of transport cliamte policy interventions can affect the Swedish transport system on an aggregated level.
 
-EMA_transport_climate_policy_SE supports performing MORDM or other analyses based on Exploratory Modeling and Analysis using the Scenario Tool. 
+EMA_transport_climate_policy_SE supports performing [MORDM](https://www.sciencedirect.com/science/article/abs/pii/S1364815212003131)or other analyses based on [Exploratory Modeling and Analysis](https://www.sciencedirect.com/science/article/abs/pii/S0040162512002491) using the Scenario Tool. 
 
 The repository has been developed within the research project [MUST: Managing deep Uncertainty in planning for Sustainable Transport](https://www.itrl.kth.se/research/ongoingprojects/must-1.1146492) performed by KTH ITRL and VTI. The primary purpose of EMA_transport_climate_policy_SE is to support a study within the project and not for external use. However, the repo is public  to enable reproduction of an upcoming paper and to serve as inspiration for other projects or applications.
 
