@@ -34,13 +34,13 @@ all_policies_sta = [policy1, policy2, policy3, policy4, policy5, policy6, policy
 # Create a list of policy names
 policy_names_sta = ['B', 'C1', 'C2', 'C3', 'C4', 'D1', 'D2', 'D3', 'Reference policy']
 
-# Now create the list of dictionaries
+# Create a list of dictionaries
 policies_sta = [{name: dict(zip(keys_sta, policy))} for name, policy in zip(policy_names_sta, all_policies_sta)]
 
 # Flatten the list of dictionaries into a single dictionary
 flattened_policies_sta = {name: dict(zip(keys_sta, policy))
                           for name, policy in zip(policy_names_sta, all_policies_sta)}
 
-# Convert the dictionary to a pandas DataFrame
+# Convert the dictionary to a DataFrame
 df_sta = pd.DataFrame.from_records(flattened_policies_sta).T
 df_sta["Policy type"] = "STA"

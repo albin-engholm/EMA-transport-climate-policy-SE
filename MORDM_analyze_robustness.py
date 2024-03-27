@@ -4,6 +4,8 @@ Created on Mon Jun 12 14:18:42 2023
 Script for performing uncertainty and robustness analysis.
 @author: aengholm
 """
+# Imports
+from matplotlib.ticker import MaxNLocator
 import math
 import pickle
 import statistics
@@ -17,20 +19,24 @@ from ema_workbench.analysis import feature_scoring
 
 from ema_workbench.analysis import prim
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 from ema_workbench.analysis import parcoords
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set_context("paper")
 
+# Set plotting style and scale up font size
+sns.set_context("paper", font_scale=1.5)
+
+# %% Load data and store in dataframes for subsequent analysis
 policy_types = ["All levers", "No transport efficiency"]
 # policy_types=["All levers"]
-# ,"No transport efficiency"]
-load_results = 1
+# "No transport efficiency"]
+
 load_results = 1
 if load_results == 1:
     from ema_workbench import load_results
-    date = "2024-02-23"
-    n_scenarios = 105
+    date = "2024-02-28"
+    n_scenarios = 4200
     # for policy_type in policy_types:
     t1 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}.p"
 
@@ -95,6 +101,7 @@ if load_results == 1:
         "All levers": '#0005CC',
         "No transport efficiency": '#05CC00',
         "STA": '#CC0005'}
+
     light_color_coding = {
         "All levers": '#6064CC',
         "No transport efficiency": '#7ECC60',
@@ -121,7 +128,7 @@ sta_policies = df_full[(df_full["Policy type"] == "STA")]["policy"].unique()
 # Plot selected policies with the manually specified colors
 for idx, policy_type in enumerate(df_reference_subset['Policy type'].unique()):
     selected_data = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
-    lines = paraxes.plot(selected_data, label=f'{policy_type}', color=color_coding[policy_type], linewidth=2)
+    lines = paraxes.plot(selected_data, label=f'{policy_type}', color=color_coding[policy_type], linewidth=1.5)
     # Annotate only the lines with 'STA' policy type
     if policy_type == 'STA':
         # Get the axis limits for the last outcome
@@ -153,7 +160,7 @@ parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
 #     ax.set_xticklabels([])  # This removes the x-axis tick labels
 #     ax.set_yticklabels([])  #
 # Set figure size and facecolor
-parcoords_fig.set_size_inches(10, 12)
+parcoords_fig.set_size_inches(12, 9)
 # parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
 
 # Add legend
@@ -164,7 +171,9 @@ parcoords_fig = plt.gcf()
 legend = parcoords_fig.legends[0]
 
 # Set the legend location by updating the bounding box. Adjust the coordinates as needed.
-legend.set_bbox_to_anchor((1.01, 0.7, 0, 0))
+legend.set_bbox_to_anchor((0.7, 1.1, 0, 0))
+# plt.legend(handles=legend_elements, bbox_to_anchor=(1, 1),
+#            loc="lower right", fontsize=12, frameon=False, ncol=2)
 
 # Update the fontsize of the legend text and the linewidth of the legend's lines.
 for text in legend.get_texts():
@@ -213,55 +222,47 @@ for ax in g.axes.flatten():
 # Adjust the figure to make space for the legend
 # plt.subplots_adjust(right=0.9)  # You might need to tweak this value.
 
-# %%
-# Pairplot levers on levers
+# %% Pairplots
+# Levers on levers
 plt.figure(figsize=(8, 6))
 sns.pairplot(data=df_reference_subset, x_vars=levers, y_vars=levers,
              hue="Policy type", palette=color_coding, diag_kws={"common_norm": False})
+# Levers on outcomes
+plt.figure(figsize=(8, 6))
+sns.pairplot(data=df_reference_subset, x_vars=levers, y_vars=key_outcomes,
+             hue="Policy type", palette=color_coding, diag_kws={"common_norm": False})
+# %% Outcomes on outcomes
+plt.figure(figsize=(8, 6))
 
+# Assuming 'df_reference_subset' is pre-filtered for a specific uncertainty set,
+# if not, you would need to filter it as in the previous loop
+all_policy_types = df_reference_subset["Policy type"].unique()
 
-# %% Parcoords plot on levers
-limits_levers = pd.DataFrame()  # Create a dataframe for lever-based limits
-for item in levers:
-    limits_levers.loc[0, item] = min(df_reference_subset[item])  # Get lower bound
-    limits_levers.loc[1, item] = max(df_reference_subset[item])  # Get upper bound
-paraxes = parcoords.ParallelAxes(limits_levers, formatter={"maxima": ".1f", "minima": ".1f"}, fontsize=20, rot=90)
-# Plot selected policies with the manually specified colors
-for idx, policy_type in enumerate(df_reference_subset['Policy type'].unique()):
-    selected_data = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
-    paraxes.plot(selected_data, label=f'{policy_type}', color=color_coding[policy_type], linewidth=2)
+# Create the pairplot
+plot = sns.pairplot(data=df_reference_subset, x_vars=objective_outcomes, y_vars=objective_outcomes,
+                    hue="Policy type", palette=color_coding, diag_kws={"common_norm": False})
 
-# Get the figure that parcoords is using
-parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
-# for ax in paraxes.axes:
-#     ax.set_xticklabels([])  # This removes the x-axis tick labels
-#     ax.set_yticklabels([])  #
-# Set figure size and facecolor
-parcoords_fig.set_size_inches(10, 10)
-# parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
+# Annotate Pearson correlation coefficient for each policy type
+for i, policy_type in enumerate(all_policy_types):
+    policy_type_df = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
+    pearson_correlation = policy_type_df[objective_outcomes].corr(method='pearson')
 
-# Optionally, you can add a legend if you need it
-paraxes.legend()
+    # Offset for the vertical position based on the policy type index
+    vertical_offset = 0.95 - i * 0.12  # Adjust offset as needed
 
-# Get the figure that parcoords is using
-parcoords_fig = plt.gcf()
-legend = parcoords_fig.legends[0]
+    # Loop through axes to annotate. Exclude diagonal.
+    for j in range(len(objective_outcomes)):
+        for k in range(len(objective_outcomes)):
+            if j != k:  # Exclude diagonal
+                ax = plot.axes[j, k]
+                # Annotate in the upper right corner with offset for each policy type
+                ax.text(0.95, vertical_offset, f"{policy_type[:3]}: r={pearson_correlation.iloc[j, k]:.2f}",
+                        horizontalalignment='right', verticalalignment='top',
+                        transform=ax.transAxes, color=color_coding[policy_type], fontsize=9)
 
-# Set the legend location by updating the bounding box. Adjust the coordinates as needed.
-legend.set_bbox_to_anchor((1, 0.8, 0, 0))
-
-# Update the fontsize of the legend text and the linewidth of the legend's lines.
-for text in legend.get_texts():
-    text.set_fontsize(18)
-for line in legend.get_lines():
-    line.set_linewidth(6)
-
-# Remove the frame (box) of the legend
-legend.get_frame().set_edgecolor('none')
-
-# Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
-parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_levers.png",
-                      dpi=300, format="png", bbox_inches="tight", transparent=True)
+# Adjust the title, labels, legend, and layout as needed
+plt.tight_layout()
+plt.show()
 
 # %%Relationship between biofuels and electrification rate in reference scenario
 plt.figure(figsize=(8, 5))
@@ -354,7 +355,6 @@ g = sns.pairplot(data=df_full, x_vars=vars_pairplot, kind="kde",
                  palette=["green", "red"], plot_kws=dict(fill=True, alpha=0.5, levels=10, gridsize=100))
 
 # %% Calculate robustness metrics
-
 # Define robustness metrics
 all_robustness_metrics = ["90th percentile", "Reference", "90_percentile_deviation",
                           "Max", "Mean", "Standard deviation", "Mean_stdev", "Max_regret"]
@@ -451,46 +451,84 @@ policy_metrics_sta_long = policy_metrics_df_long[policy_metrics_df_long["Policy 
 sns.set_style("whitegrid")
 
 all_uncertainty_sets = policy_metrics_df["Uncertainty set"].unique()
+all_policy_types = policy_metrics_df["Policy type"].unique()
 
 # Loop over each outcome and uncertainty set combination
-for outcome in key_outcomes:
+rm_pairplot = ["90_percentile_deviation", "Mean_stdev"]
+for rm in rm_pairplot:
+    pairplot_metrics = []
+    for outcome in key_outcomes:
+        pairplot_metrics.append(f"{rm} {outcome}")
+
     for uncertainty_set in all_uncertainty_sets:
         # Filter the data
         subset_df = policy_metrics_df[policy_metrics_df["Uncertainty set"] == uncertainty_set]
 
-        # Metrics to visualize in their original form (without newlines)
-        metrics = [
-            f"90_percentile_deviation {outcome}",
-            f"Max_regret {outcome}",
-            f"Mean_stdev {outcome}"
-        ]
-        metrics = [
-            f"90_percentile_deviation {outcome}",
-            f"Mean_stdev {outcome}"
-        ]
-
         # Create the pairplot
-        plot = sns.pairplot(data=subset_df, vars=metrics, diag_kind="kde", hue="Policy type",
+        plot = sns.pairplot(data=subset_df, vars=pairplot_metrics, diag_kind="kde", hue="Policy type",
                             height=2.5, palette=color_coding, diag_kws={"common_norm": False})
-        plot.fig.suptitle(f"Outcome: {outcome}, Uncertainty Set: {uncertainty_set}", y=1.02)
+        plot.fig.suptitle(f"Robustness metric: {rm}", y=1, fontsize=20)
 
-        # Adjust x-labels and y-labels for better readability
+        # Annotate Pearson correlation coefficient for each policy type
+        for i, policy_type in enumerate(all_policy_types):
+            # Offset the vertical position of each annotation by the index of the policy type
+            vertical_offset = 0.95 - i * 0.12  # Adjust offset as needed
+
+            policy_type_df = subset_df[subset_df['Policy type'] == policy_type]
+            pearson_correlation = policy_type_df[pairplot_metrics].corr(method='pearson')
+
+            # Loop through axes to annotate. Exclude diagonal.
+            for j in range(len(pairplot_metrics)):
+                for k in range(len(pairplot_metrics)):
+                    if j != k:  # Exclude diagonal
+                        ax = plot.axes[j, k]
+                        # Annotate in the upper right corner with offset for each policy type
+                        ax.text(0.95, vertical_offset, f"r={pearson_correlation.iloc[j, k]:.2f}",
+                                horizontalalignment='right', verticalalignment='center',
+                                transform=ax.transAxes, color=color_coding[policy_type], fontsize=20)
+
+        # Adjust labels for better readability
         for ax in plot.axes.flat:
             ax.set_xlabel(ax.get_xlabel().replace(" ", "\n"), rotation=0)
-            # If y-labels are still overlapping, try using 45 here too.
             ax.set_ylabel(ax.get_ylabel().replace(" ", "\n"), rotation=90)
-        # Position of legend relative to axes bounding box (x: 1 is right outside of the plot, y: 0.5 is centered)
-        plot._legend.set_bbox_to_anchor((1.3, 0.5))
+
+        plot._legend.set_bbox_to_anchor((1.15, 0.5))
         plt.tight_layout()
         plt.show()
+
 # %% Visualize satisficing CO2
 g = sns.displot(policy_metrics_df, x="Satisficing metric M1_CO2_TTW_total",
                 hue="Policy type", kind="kde", common_norm=False, bw_adjust=0.5, cut=0,
-                palette=color_coding, fill=True)
-
+                palette=color_coding, fill=False)
 g._legend.set_bbox_to_anchor((0.7, 0.9, 0, 0))
 # Remove the legend title
 g._legend.set_title('')
+
+
+g = sns.FacetGrid(policy_metrics_df, col="Policy type", col_wrap=3, height=4,
+                  sharex=True, sharey=False, hue="Policy type", palette=color_coding)
+
+# Plot histograms
+g = g.map(sns.histplot, "Satisficing metric M1_CO2_TTW_total",
+          stat="count", element="step", bins=10).set(xlim=(None, 1))
+for ax in g.axes.flatten():
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+# Adjust x lables
+g.set_axis_labels(x_var="RMco$_{2}$sat", y_var="").set_titles("Policy type: {col_name}")
+g.fig.tight_layout()
+
+plt.show()
+# %%
+plt.figure()
+sns.boxplot(data=policy_metrics_df, x="Policy type", y="Satisficing metric M1_CO2_TTW_total", palette=color_coding)
+# for ax in g.axes.flatten():
+#     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+# Adjust x lables
+# g.set_axis_labels(x_var="RMco$_{2}$sat", y_var="").set_titles("Policy type: {col_name}")
+# g.fig.tight_layout()
+
+plt.show()
+
 
 # %% Visualize distributions of different policy metrics
 # Create the FacetGrid
@@ -521,11 +559,13 @@ g.despine()
 #                     hue="Policy type", common_norm=False, kind="kde")
 #         plt.title(f'Distribution of {robustness_metric} for {outcome}')
 # %% Pairplot of robustness
+# Create a dictionary for renaming columns
 
 for robustness_metric in robustness_metrics:
     robustness_metric_outcomes = []
     for outcome in key_outcomes:
         robustness_metric_outcomes.append(f"{robustness_metric} {outcome}")
+    rename_dict = {long: short for long, short in zip(robustness_metric_outcomes, key_outcomes)}
     sns.pairplot(policy_metrics_df, x_vars=robustness_metric_outcomes,
                  y_vars=robustness_metric_outcomes, hue="Policy type", palette=color_coding)
 # %% Perform statistical test of robustness metrics differences ALl levers No transport efficiency
@@ -556,17 +596,36 @@ for robustness_metric in robustness_metrics:
             group1['Value'].dropna(), group2['Value'].dropna(), alternative='two-sided')
         print(f'Mann-Whitney U test for {robustness_metric} {outcome}: p-value = {p_value}')
 
-# %% Parcoords of all policies and robustness metrics
+# %% Parcoords of all policies and robustness metrics with empahis on STA or a subset of policies, two different graphs
 # Save the original default size
 original_figsize = plt.rcParams["figure.figsize"]
 
 # Set the figure size
-plt.rcParams["figure.figsize"] = [8, 8]
+plt.rcParams["figure.figsize"] = [7, 6]
+# Max/min/median All Levers and no transport efficiency policies highlighted
+# Identify what policies to highlight and store the policy id in a list
+highlighted_policy_info = {}
+metric_to_use = '90_percentile_deviation M1_CO2_TTW_total'
+for policy_type in ["All levers", "No transport efficiency"]:
+    df_pt = policy_metrics_df[policy_metrics_df["Policy type"] == policy_type]
+    # Max
+    # Find indices for max, min, and median
+    max_policy_idx = df_pt[metric_to_use].idxmax()
+    min_policy_idx = df_pt[metric_to_use].idxmin()
+    median_value = df_pt[metric_to_use].median()
+    median_policy_idx = (df_pt[metric_to_use] - median_value).abs().idxmin()
 
-
-highlight_policies = [969, 457, 1044, 1294, 2395, 1507]
+    # Store the information in the dictionary
+    highlighted_policy_info[policy_type] = [
+        (int(df_pt.loc[max_policy_idx, 'policy']), "solid"),
+        (int(df_pt.loc[min_policy_idx, 'policy']), "dotted"),
+        (int(df_pt.loc[median_policy_idx, 'policy']), "dashdot")
+    ]
 linestyles = ["solid", "dotted", "dashdot", "solid", "dotted", "dashdot"]
-
+rm_dict = {
+    "90_percentile_deviation": r"$\mathrm{RM_{90\%\,dev}}$",
+    "Mean_stdev": r"$\mathrm{RM_{MeanStdev}}$"
+}
 for robustness_metric in robustness_metrics:
     dynamic_outcomes = [f"{robustness_metric} {outcome}" for outcome in key_outcomes]  # Dynamic outcomes
 
@@ -590,7 +649,140 @@ for robustness_metric in robustness_metrics:
         paraxes.ticklabels = key_outcomes
         # Define your color coding for the legend
         labels = list(color_coding.keys())
-        legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
+        color_legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
+
+        # Create linestyle legend elements. Adjust the labels as per your description.
+        linestyle_labels = ["Max", "Min", "Median"]
+        linestyle_legend_elements = [Line2D([0], [0], color='black', linewidth=2, linestyle=ls, label=label)
+                                     for ls, label in zip(linestyles[:3], linestyle_labels)]
+
+        # Combine color and linestyle legend elements
+        legend_elements = color_legend_elements + linestyle_legend_elements
+        sta_policies = df_full[(df_full["Policy type"] == "STA")]["policy"].unique().tolist()
+
+        # Loop over rows in dataframe. Plot all policies
+        for i, row in policy_metrics_subset.iterrows():
+            row_renamed = row.rename(rename_dict)
+            policy_type = row["Policy type"]
+            data = row_renamed[key_outcomes]
+
+            if policy_type != "STA":
+                color = light_color_coding[policy_type]
+                paraxes.plot(data, color=color, linewidth=0.5)
+            elif policy_type == "STA":
+                color = color_coding[policy_type]
+                paraxes.plot(data, color=color, linewidth=1)
+        for policy_type, policies in highlighted_policy_info.items():
+            for policy_id, linestyle in policies:
+                row = policy_metrics_subset[policy_metrics_subset['policy'] == str(policy_id)]
+
+                if not row.empty:
+                    row_renamed = row.iloc[0].rename(rename_dict)
+                    data = row_renamed[key_outcomes]
+                    color = color_coding[policy_type]
+                    paraxes.plot(data, color=color, linestyle=linestyle, linewidth=3)
+        # Add and adjustlegend manually
+        plt.legend(handles=legend_elements, bbox_to_anchor=(1, 1),
+                   loc="lower right", fontsize=12, frameon=False, ncol=2)
+
+        # for i, ax in enumerate(paraxes.axes):
+
+        #     ax.set_xticklabels([key_outcomes[i]])  # This removes the x-axis tick labels
+        #     ax.set_yticklabels([])  #
+
+        plt.suptitle(f"{rm_dict[robustness_metric]}", fontsize=20, x=0, y=1.05, horizontalalignment="left")
+        plt.show()
+
+# %% Parcoords plot on levers
+limits_levers = pd.DataFrame()  # Create a dataframe for lever-based limits
+for item in levers:
+    limits_levers.loc[0, item] = min(df_reference_subset[item])  # Get lower bound
+    limits_levers.loc[1, item] = max(df_reference_subset[item])  # Get upper bound
+paraxes = parcoords.ParallelAxes(limits_levers, formatter={"maxima": ".1f", "minima": ".1f"}, fontsize=20, rot=90)
+# Plot selected policies with the manually specified colors
+for idx, policy_type in enumerate(df_reference_subset['Policy type'].unique()):
+    if policy_type != "STA":
+        selected_data = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
+        paraxes.plot(selected_data, label=f'{policy_type}', color=light_color_coding[policy_type], linewidth=1)
+    elif policy_type == "STA":
+        selected_data = df_reference_subset[df_reference_subset['Policy type'] == policy_type]
+        paraxes.plot(selected_data, label=f'{policy_type}', color=color_coding[policy_type], linewidth=2)
+        # Loop over rows in dataframe. Plot all policies
+
+for policy_type, policies in highlighted_policy_info.items():
+    for policy_id, linestyle in policies:
+        row = policy_metrics_subset[policy_metrics_subset['policy'] == str(policy_id)]
+
+        if not row.empty:
+            row_renamed = row.iloc[0].rename(rename_dict)
+            data = df_reference_subset[df_reference_subset["policy"] == str(policy_id)]
+            color = color_coding[policy_type]
+            paraxes.plot(data, color=color, linestyle=linestyle, linewidth=4)
+# Get the figure that parcoords is using
+parcoords_fig = plt.gcf()  # 'gcf' stands for 'Get Current Figure'
+# for ax in paraxes.axes:
+#     ax.set_xticklabels([])  # This removes the x-axis tick labels
+#     ax.set_yticklabels([])  #
+# Set figure size and facecolor
+parcoords_fig.set_size_inches(15, 60)
+# parcoords_fig.patch.set_facecolor((1, 1, 1, 0))  # Set transparency
+
+# Define your color coding for the legend
+labels = list(color_coding.keys())
+color_legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
+
+# Create linestyle legend elements. Adjust the labels as per your description.
+linestyle_labels = ["Max", "Min", "Median"]
+linestyle_legend_elements = [Line2D([0], [0], color='black', linewidth=2, linestyle=ls, label=label)
+                             for ls, label in zip(linestyles[:3], linestyle_labels)]
+
+# Combine color and linestyle legend elements
+legend_elements = color_legend_elements + linestyle_legend_elements
+plt.legend(handles=legend_elements, bbox_to_anchor=(1, 1),
+           loc="lower right", fontsize=18, frameon=False, ncol=2)
+
+
+# Instead of saving 'fig', now we save 'parcoords_fig' which is the actual figure containing the plot.
+parcoords_fig.savefig("./figs/parcoords_candidate_policies_reference_levers.png",
+                      dpi=300, format="png", bbox_inches="tight", transparent=True)
+# %% STA policies highlighted
+# Save the original default size
+original_figsize = plt.rcParams["figure.figsize"]
+
+# Set the figure size
+plt.rcParams["figure.figsize"] = [7, 6]
+for robustness_metric in robustness_metrics:
+    dynamic_outcomes = [f"{robustness_metric} {outcome}" for outcome in key_outcomes]  # Dynamic outcomes
+
+    # for uncertainty_set in policy_metrics_df["Uncertainty set"].unique():
+    for uncertainty_set in ["XP"]:
+        policy_metrics_subset = policy_metrics_df[policy_metrics_df["Uncertainty set"] == uncertainty_set]
+
+        limits_outcomes = pd.DataFrame()  # Create a dataframe for limits
+        for i, item in enumerate(dynamic_outcomes):
+            limits_outcomes.loc[0, item] = min(policy_metrics_subset[item])  # Get lower bound
+            limits_outcomes.loc[1, item] = max(policy_metrics_subset[item])  # Get upper bound
+        # Create a dictionary for renaming columns
+        rename_dict = {long: short for long, short in zip(dynamic_outcomes, key_outcomes)}
+
+        # Rename columns of limits_outcomes for display purposes
+        limits_outcomes.rename(columns=rename_dict, inplace=True)
+        limits = limits_outcomes
+
+        # Create the parallel coordinates
+        paraxes = parcoords.ParallelAxes(limits)
+        paraxes.ticklabels = key_outcomes
+        # Define your color coding for the legend
+        labels = list(color_coding.keys())
+        color_legend_elements = [Patch(facecolor=color_coding[label], label=label) for label in labels]
+
+        # Create linestyle legend elements. Adjust the labels as per your description.
+        linestyle_labels = ["Max", "Min", "Median"]
+        linestyle_legend_elements = [Line2D([0], [0], color='black', linewidth=2, linestyle=ls, label=label)
+                                     for ls, label in zip(linestyles[:3], linestyle_labels)]
+
+        # Combine color and linestyle legend elements
+        legend_elements = color_legend_elements + linestyle_legend_elements
         sta_policies = df_full[(df_full["Policy type"] == "STA")]["policy"].unique().tolist()
 
         # Loop over rows in dataframe. Plot all policies
@@ -600,9 +792,10 @@ for robustness_metric in robustness_metrics:
             data = row_renamed[key_outcomes]
             color = ultra_light_color_coding[policy_type]
             paraxes.plot(data, color=color)
+        # Initialize a variable to control the alternation of label placement
+        alternate = False
 
-        # Then plot the highlighted policies. This is to ensure highlighted policies are plot on top
-        count = 0
+        # Then plot the STA policies. This is to ensure STA policies are plotted on top
         for i, row in policy_metrics_subset.iterrows():
             policy_type = row["Policy type"]
             if policy_type == 'STA':
@@ -618,8 +811,9 @@ for robustness_metric in robustness_metrics:
                 y_value = data[rename_dict.get(dynamic_outcomes[-1])]  # This is the data value at the last axis
                 y_relative = (y_value - last_axis_limits[0]) / (last_axis_limits[1] - last_axis_limits[0])
 
-                # Calculate the x-position as a relative position beyond the last axis
-                x_relative = len(dynamic_outcomes) + 0.05  # Adjust offset to make it pretty
+                # Alternate the x-position to avoid clashing
+                x_offset = 0.05 if alternate else 0.  # Alternate the offset value
+                x_relative = len(dynamic_outcomes) + x_offset
 
                 # Now we use the axes' transform to place the text correctly
                 last_axis_transform = paraxes.axes[-1].transData
@@ -627,25 +821,24 @@ for robustness_metric in robustness_metrics:
                 text = policy_metrics_subset.loc[i, "policy"]  # Use the policy name from the current row
                 fontsize = 16
                 paraxes.fig.text(x_relative, y_relative, text, transform=last_axis_transform,
-                                 fontsize=fontsize, color='red', ha='left', va='center',
+                                 fontsize=fontsize, color=color, ha='left' if alternate else 'right', va='center',
                                  bbox=dict(facecolor='white', alpha=0, edgecolor='none', boxstyle='round,pad=0.2'))
-            # elif (int(row["policy"]) in highlight_policies):
 
-            #     row_renamed = row.rename(rename_dict)
-            #     data = row_renamed[key_outcomes]
-            #     color = color_coding[policy_type]
-            #     paraxes.plot(data, color=color, linestyle=linestyles[count],linewidth=2.5)
-            #     count+=1
+                # Flip the alternation flag
+                alternate = not alternate
         # Add and adjustlegend manually
-        plt.legend(handles=legend_elements, bbox_to_anchor=(1, 1), loc="lower right", fontsize=12, frameon=False)
+        legend_elements = color_legend_elements
+        plt.legend(handles=legend_elements, bbox_to_anchor=(1, 1),
+                   loc="lower right", fontsize=12, frameon=False, ncol=1)
 
         # for i, ax in enumerate(paraxes.axes):
 
         #     ax.set_xticklabels([key_outcomes[i]])  # This removes the x-axis tick labels
         #     ax.set_yticklabels([])  #
 
-        plt.suptitle(f"Robustness metric: {robustness_metric}", fontsize=14, x=0, y=1.02, horizontalalignment="left")
+        plt.suptitle(f"{rm_dict[robustness_metric]}", fontsize=20, x=0, y=1.05, horizontalalignment="left")
         plt.show()
+
 
 plt.rcParams["figure.figsize"] = original_figsize
 
@@ -727,6 +920,8 @@ for metric in metrics:
         plt.show()
 
 plt.rcParams["figure.figsize"] = original_figsize
+# %% Pairplot of robustness metrics to see tradeoffs between robustness
+sns.pairplotpairplo
 
 # %% Analyze whether we can find a policy that is more robust in all outcomes for all STA policies
 
@@ -852,74 +1047,56 @@ df_samples["Ranking weighted"] = df_samples.groupby([
 
 # Plot using FacetGrid
 color_sta_policies = ["green", "lightcoral", "red", "darkred", "coral", "cornflowerblue", "blue", "darkblue"]
-g = sns.FacetGrid(df_samples, col='w ref', height=3.5, aspect=1.25, sharex=True, sharey=False)
+g = sns.FacetGrid(df_samples, col='w ref', height=4, aspect=1, sharex=True, sharey=True)
 g.map(sns.lineplot, 'Metric', 'Ranking weighted', 'policy', marker='o', palette=color_sta_policies)
 
-g.fig.subplots_adjust(hspace=0.8, wspace=0.3)
+g.fig.subplots_adjust(hspace=0.9, wspace=0.3)
 # Enhancing the plot
 g.set_xticklabels(rotation=90)
-plt.subplots_adjust(top=0.9)
+plt.subplots_adjust(top=0.85)
 #g.fig.suptitle('Weighted Ranking of Policies for Different w_ref Values 90th percentile dev', size=16)
 g.add_legend(title="STA policy", bbox_to_anchor=(0.5, 1.02), loc='center right', borderaxespad=0.1, ncol=8)
-g.set_titles(col_template="Reference scenario performance weight: {col_name}", row_template="{row_name}")
+g.set_titles(col_template=r"$\mathrm{{W_{{ref}}}}$: {col_name}", row_template="{row_name}")
+
 g.set_axis_labels("", "Ranking")
 plt.show()
 plt.figure()
-# weights = [0, 0.25, 0.5, 0.75, 1]
-# df_samples = pd.DataFrame()
-# for w_ref in weights:
-#     w_rob = 1 - w_ref
-#     temp_df = df_long.copy()
-#     temp_df["Weighted ranking"] = w_ref * temp_df['Ranking outcome in reference scenario'] + \
-#         w_rob * temp_df['Ranking mean_stdev']
-#     temp_df['w ref'] = w_ref
-#     df_samples = pd.concat([df_samples, temp_df])
-
-# # Plot using FacetGrid
-# color_map = ["green", "lightcoral", "red", "darkred", "coral", "cornflowerblue", "blue", "darkblue"]
-# g = sns.FacetGrid(df_samples, col='w ref', col_wrap=3, height=4, aspect=1.5, sharex=False)
-# g.map(sns.lineplot, 'Metric', 'Weighted ranking', 'policy', marker='o', palette=color_map)
-# g.fig.subplots_adjust(hspace=0.6, wspace=0.3)
-# # Enhancing the plot
-# g.add_legend()
-# g.set_xticklabels(rotation=45)
-# plt.subplots_adjust(top=0.9)
-# g.fig.suptitle('Weighted Ranking of Policies for Different w_ref Values mean/stdev', size=16)
-
-# plt.show()
 
 # %% Visualize robustness and reference scenario performance 90th percentile
+metric_name_dict = {'90th Percentile Deviation': r'$\mathrm{RM_{90\%\,dev}}$',
+                    'Mean_stdev': r'$\mathrm{RM_{MeanStdev}}$'}
 
 
 def reference_robustness_scatter_plot(df, y_variable, plot_title):
     # Create the FacetGrid
-    g = sns.FacetGrid(df, col='Metric', col_wrap=3, sharex=False, sharey=False)
+    g = sns.FacetGrid(df, col='Metric', col_wrap=4, sharex=False, sharey=False)
     g = g.map(plt.scatter, 'Outcome in reference scenario', y_variable, color='red')
-    g.fig.subplots_adjust(hspace=0.38, wspace=0.25)
+    g.fig.subplots_adjust(hspace=0.5, wspace=0.6)
 
     # Annotate each point with its policy
     for ax, (metric, subset) in zip(g.axes.flatten(), df.groupby('Metric')):
         subset.apply(lambda row: ax.text(row['Outcome in reference scenario'],
                                          row[y_variable],
                                          str(row['policy']),
-                                         fontsize=10,
-                                         ha='left', va="bottom"), axis=1)
+                                         fontsize=12,
+                                         ha='left', va="top"), axis=1)
 
     # Set the subplot titles and x-axis labels for all subplots
     for ax, title in zip(g.axes.flatten(), x_vars):
         ax.set_title(title)
-        ax.set_xlabel('Outcome in reference scenario')
-
+        ax.set_xlabel('Outcome ref. scenario')
+        ax.set_ylabel(metric_name_dict[y_variable])
     # Set the subplot titles
-    g.set_titles("{col_name}", size=10)
-    g.fig.suptitle(plot_title, size=10, y=1.02)
+    g.set_titles("{col_name}")
+    #g.fig.suptitle(plot_title, fontsize=14, y=1.05)
 
 
 for robustness_metric, plot_title in [
-    ('90th Percentile Deviation', 'STA policies: 90th percentile deviation vs reference scenario performance'),
-    ('Mean_stdev', 'STA policies: Mean-stdev vs reference scenario performance')
+    ('90th Percentile Deviation', r'STA policies: $\mathrm{RM_{90\%\,dev}}$ vs reference scenario performance'),
+    ('Mean_stdev', r'STA policies: $\mathrm{RM_{MeanStdev}}$ vs reference scenario performance')
 ]:
-    reference_robustness_scatter_plot(df_long, robustness_metric, plot_title)
+    reference_robustness_scatter_plot(df_long[df_long["Metric"].isin(
+        objective_outcomes)], robustness_metric, plot_title)
 # %% Visualie relationship between mean and stdev
 for metric in key_outcomes:
     plt.figure()
@@ -1258,13 +1435,15 @@ for index, row in df_policy_vulnerabilities.iterrows():
 # Plotting the scatterplot with the specified color coding
 plt.figure(figsize=(8, 6))
 sns.set_style("white")
+df_policy_vulnerabilities["Share of scenarios where CO2 target is met (Rsat)"] = 1 - \
+    df_policy_vulnerabilities["CO2 target not met share"]
 sns.scatterplot(
     data=df_policy_vulnerabilities,
     x="Coverage",
     y="Density",
     hue="Policy type",
     palette=color_coding,
-    size="CO2 target not met share",
+    size="Share of scenarios where CO2 target is met (Rsat)",
 )
 sns.despine()
 # Annotating and emphasizing the policy named "B"
@@ -1315,13 +1494,13 @@ y = {key: value for key, value in outcomes_xp.items() if key in keys_to_include}
 fs = feature_scoring.get_feature_scores_all(x_sorted, y)
 
 # Sort both the index and columns of the fs DataFrame using the alphanumeric sorter
-fs_sorted = fs.sort_index(key=alphanumeric_sorter)
-sorted_fs_columns = sorted(fs_sorted.columns, key=alphanumeric_sorter)
-fs_sorted = fs_sorted[sorted_fs_columns]
-print(fs_sorted.index)  # Should show the sorted feature names
-print(fs_sorted.columns)  # Should show the sorted outcome names
+# fs_sorted = fs.sort_index(key=alphanumeric_sorter)
+# sorted_fs_columns = sorted(fs_sorted.columns, key=alphanumeric_sorter)
+# fs_sorted = fs_sorted[sorted_fs_columns]
+# print(fs_sorted.index)  # Should show the sorted feature names
+# print(fs_sorted.columns)  # Should show the sorted outcome names
 # Now create the heatmap
-sns.heatmap(fs_sorted, cmap="viridis", annot=True, fmt=".0%")
+sns.heatmap(fs, cmap="viridis", annot=True, fmt=".0%")
 
 
 # all X and L on all outcomes
@@ -1440,3 +1619,8 @@ for metric in metrics:
                           format="png", bbox_inches="tight", transparent=True)
     plt.show()
 plt.rcParams["figure.figsize"] = original_figsize
+# %%
+df_temp = df_full[df_full["policy"].isin(["B", "C1", "C2", "C3", "C4", "D1", "D2", "D3"])]
+df_temp["policy"] = df_temp["policy"].astype(str)
+for outcome in objective_outcomes:
+    sns.displot(df_temp, x=outcome, hue="policy", kind="kde")

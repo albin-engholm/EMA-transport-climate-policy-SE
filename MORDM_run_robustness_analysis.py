@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     # scenarios=[scenarios,reference]
     # %% Set up two runs for various uncertainty parameters #Run model - for open exploration
-    n_p = -2
+    n_p = -3
     # Run
     import time
     tic = time.perf_counter()
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         reference = Scenario("Reference", **reference_scenario)
         scenario_list.append(reference)
         # Sample additional scenarios
-        nr_scenarios_per_uncertainty = 5
+        nr_scenarios_per_uncertainty = 200
         nr_scenarios = int(nr_scenarios_per_uncertainty *
                            len(model.uncertainties.keys()))  # select number of scenarios (per policy)
         scenarios = samplers.sample_uncertainties(model, nr_scenarios, sampler=samplers.LHSSampler())
