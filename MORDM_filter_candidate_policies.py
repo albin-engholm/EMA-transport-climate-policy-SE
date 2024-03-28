@@ -18,11 +18,11 @@ if __name__ == "__main__":
     import pandas as pd
     df_full = pd.DataFrame()
     policy_types = ["All levers", "No transport efficiency"]
-    # policy_types = ["All levers"]  # ,"No transport efficiency"]
+    #policy_types = ["No transport efficiency"]
     load_results = 1
     if load_results == 1:
-        date = "2024-02-16"
-        nfe = 1000000
+        date = "2024-03-28"
+        nfe = 8000
         for idx, policy_type in enumerate(policy_types):
             if idx == 0:
                 t1 = f'./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p'
@@ -39,8 +39,8 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if idx == 1:
-                date = "2024-02-19"
-                nfe = 1000000
+                date = "2024-03-28"
+                nfe = 8000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
@@ -68,8 +68,8 @@ if __name__ == "__main__":
     levers = model.levers.keys()
     limits_levers = pd.DataFrame()  # Create a dataframe for lever-based limits
     for lever in levers:
-        limits_levers.loc[0, lever] = min(df_full[lever])  # Get lower bound
-        limits_levers.loc[1, lever] = max(df_full[lever])  # Get upper bound
+        limits_levers.loc[0, lever] = 0  # Set lower bound
+        limits_levers.loc[1, lever] = model.levers[lever]._upper_bound  # Get upper bound
 
     limits = limits_levers
 

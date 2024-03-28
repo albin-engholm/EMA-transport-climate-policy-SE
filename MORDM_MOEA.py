@@ -37,13 +37,13 @@ if __name__ == "__main__":
         sampler = samplers.LHSSampler()
     load_diverse_scenarios = False  # Should a pre-generated set of diverse scenarios be loaded and used as reference?
 
-    n_p = -2  # set # of parallel threads
-    nfe = 1000  # Set number of nfes  in optimization
+    n_p = -4  # set # of parallel threads
+    nfe = 1000000  # Set number of nfes  in optimization
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
     #policy_types = ["All levers", "No transport efficiency"]
-    policy_types = ["No transport efficiency"]
-    #policy_types = ["All levers"]
+    #policy_types = ["No transport efficiency"]
+    policy_types = ["All levers"]
 
     # Optimization parameters
     # Set epsilons
@@ -190,13 +190,35 @@ if __name__ == "__main__":
 
         return distance
 
+    def fuel_tax_levers_constraint(L3_fuel_tax_increase_gasoline, L4_fuel_tax_increase_diesel):
+        # Specify the threshold for the diff in gasoline and diesel biofuel admixture in percentage points
+        fuel_tax_lever_diff = 0.02
+        # Extract the first element if Series are provided, ensuring scalar values
+        if isinstance(L3_fuel_tax_increase_gasoline, pd.Series):
+            L3_fuel_tax_increase_gasoline = L3_fuel_tax_increase_gasoline.iloc[0]
+        if isinstance(L4_fuel_tax_increase_diesel, pd.Series):
+            L4_fuel_tax_increase_diesel = L4_fuel_tax_increase_diesel.iloc[0]
+
+        # Calculate the absolute difference between the shares
+        difference = abs(L3_fuel_tax_increase_gasoline - L4_fuel_tax_increase_diesel)
+
+        # Calculate the distance from the constraint threshold
+        distance = max(0, difference - fuel_tax_lever_diff)
+
+        return distance
+
     # Specify the set of constraints
 
     constraints = [Constraint("max CO2", outcome_names="M1_CO2_TTW_total",
                               function=lambda x: max(0, x-CO2_target)),
                    Constraint("bio levers",
                               parameter_names=["L1_bio_share_diesel", "L2_bio_share_gasoline"],
-                              function=bio_levers_constraint)]
+                              function=bio_levers_constraint),
+                   Constraint("fuel tax levers",
+                              parameter_names=["L3_fuel_tax_increase_gasoline", "L4_fuel_tax_increase_diesel"],
+                              function=fuel_tax_levers_constraint),
+
+                   ]
 
 # %% Run MOEA for each policy type and scenario
     tic = time.perf_counter()

@@ -35,8 +35,8 @@ policy_types = ["All levers", "No transport efficiency"]
 load_results = 1
 if load_results == 1:
     from ema_workbench import load_results
-    date = "2024-02-28"
-    n_scenarios = 4200
+    date = "2024-03-28"
+    n_scenarios = 84
     # for policy_type in policy_types:
     t1 = f"./output_data/robustness_analysis_results/X_XP{n_scenarios}_scenarios_MORDM_OE_{date}.p"
 
@@ -239,7 +239,7 @@ plt.figure(figsize=(8, 6))
 all_policy_types = df_reference_subset["Policy type"].unique()
 
 # Create the pairplot
-plot = sns.pairplot(data=df_reference_subset, x_vars=objective_outcomes, y_vars=objective_outcomes,
+plot = sns.pairplot(data=df_reference_subset, x_vars=key_outcomes, y_vars=key_outcomes,
                     hue="Policy type", palette=color_coding, diag_kws={"common_norm": False})
 
 # Annotate Pearson correlation coefficient for each policy type
@@ -920,8 +920,7 @@ for metric in metrics:
         plt.show()
 
 plt.rcParams["figure.figsize"] = original_figsize
-# %% Pairplot of robustness metrics to see tradeoffs between robustness
-sns.pairplotpairplo
+
 
 # %% Analyze whether we can find a policy that is more robust in all outcomes for all STA policies
 
