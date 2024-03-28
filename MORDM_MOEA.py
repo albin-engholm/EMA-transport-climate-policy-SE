@@ -37,8 +37,8 @@ if __name__ == "__main__":
         sampler = samplers.LHSSampler()
     load_diverse_scenarios = False  # Should a pre-generated set of diverse scenarios be loaded and used as reference?
 
-    n_p = -4  # set # of parallel threads
-    nfe = 1000000  # Set number of nfes  in optimization
+    n_p = -2  # set # of parallel threads
+    nfe = 1000  # Set number of nfes  in optimization
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
     #policy_types = ["All levers", "No transport efficiency"]
@@ -169,25 +169,34 @@ if __name__ == "__main__":
     df_scenarios = pd.DataFrame(scenario_list)
     n_scenarios = len(scenario_list)
     # %% Specify constraints
+    # Define CO2 target to use for CO2 constraint
     CO2_target = 0.1*18.9  # Set CO2 target [m ton CO2 eq / year], 2040 target is 10% of 2010 emission levels
-    bio_target = 15  # Set target for max use of biofuels
 
-    # Different sets of constraints. Only CO2 target is used as default
+    # Define constraint for how much the diesel and gasoline lever might differ
+    def bio_levers_constraint(L1_bio_share_diesel, L2_bio_share_gasoline):
+        # Specify the threshold for the diff in gasoline and diesel biofuel admixture in percentage points
+        bio_lever_diff = 0.05
+        # Extract the first element if Series are provided, ensuring scalar values
+        if isinstance(L1_bio_share_diesel, pd.Series):
+            L1_bio_share_diesel = L1_bio_share_diesel.iloc[0]
+        if isinstance(L2_bio_share_gasoline, pd.Series):
+            L2_bio_share_gasoline = L2_bio_share_gasoline.iloc[0]
+
+        # Calculate the absolute difference between the shares
+        difference = abs(L1_bio_share_diesel - L2_bio_share_gasoline)
+
+        # Calculate the distance from the constraint threshold
+        distance = max(0, difference - bio_lever_diff)
+
+        return distance
+
+    # Specify the set of constraints
 
     constraints = [Constraint("max CO2", outcome_names="M1_CO2_TTW_total",
-                              function=lambda x: max(0, x-CO2_target))]
-
-    # constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
-    #                           function=lambda x : max(0, x-CO2_target)),
-    #                 Constraint("max bio", outcome_names="Energy bio total",
-    #                                           function=lambda y : max(0, y-bio_target)),
-    #                 Constraint("positive CO2",outcome_names="CO2 TTW change total",
-    #                            function=lambda x : min(0,x+1))
-    #                            ]
-    # constraints = [Constraint("max CO2", outcome_names="CO2 TTW change total",
-    #                           function=lambda x : max(0, x-CO2_target)),
-    #                 Constraint("max bio", outcome_names="Energy bio total",
-    #                                           function=lambda y : max(0, y-bio_target))]
+                              function=lambda x: max(0, x-CO2_target)),
+                   Constraint("bio levers",
+                              parameter_names=["L1_bio_share_diesel", "L2_bio_share_gasoline"],
+                              function=bio_levers_constraint)]
 
 # %% Run MOEA for each policy type and scenario
     tic = time.perf_counter()
