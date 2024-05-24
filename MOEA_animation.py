@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 # Load the data
-file_str = "1000000_All levers_2023-12-30"
+file_str = "1000000_All levers_2024-03-29"
 archives = ArchiveLogger.load_archives("./archives_animation/"+file_str+".tar.gz")
 
-dpi = 80 #default dpi 300
+dpi = 300  # default dpi 300
 # Filter out empty dataframes
 archives = {k: v for k, v in archives.items() if not v.empty}
 

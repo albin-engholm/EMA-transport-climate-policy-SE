@@ -19,10 +19,11 @@ if __name__ == "__main__":
     df_full = pd.DataFrame()
     policy_types = ["All levers", "No transport efficiency"]
     #policy_types = ["No transport efficiency"]
+    #policy_types = ["All levers"]
     load_results = 1
     if load_results == 1:
-        date = "2024-03-28"
-        nfe = 8000
+        date = "2024-03-29"
+        nfe = 1000000
         for idx, policy_type in enumerate(policy_types):
             if idx == 0:
                 t1 = f'./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p'
@@ -39,8 +40,8 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if idx == 1:
-                date = "2024-03-28"
-                nfe = 8000
+                date = "2024-03-31"
+                nfe = 1000000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 # =str(nfe)+'_nfe_directed_search_sequential_'+str(date.today())+'_'+str(n_scenarios)+'_scenarios'
                 import pickle
@@ -570,7 +571,7 @@ if __name__ == "__main__":
     # Initialize parallel coordinates plot
     paraxes = parcoords.ParallelAxes(limits_levers)
     paraxes.plot(df_full[df_full.index.isin(df_candidate_policies.index) == False],
-                 color='gray')  # Non-selected policies in gray
+                 color='lightgray')  # Non-selected policies in gray
 
     # Color map for unique policy types
     colors = plt.cm.tab10(range(len(df_candidate_policies['Policy type'].unique())))

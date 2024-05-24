@@ -156,7 +156,98 @@ if load_results == 1:
     df_full_sta = df_full[df_full["Policy type"] == "STA"]
     df_sta_levers = df_full_sta[list(levers)+["policy"]].drop_duplicates()
     df_reference_subset = df_full[(df_full["scenario"] == "Reference") & (df_full["Uncertainty set"] == "XP")]
+# %% Calculate robustness metrics
+# Define robustness metrics
+all_robustness_metrics = ["90th percentile", "Reference", "90_percentile_deviation",
+                          "Max", "Mean", "Standard deviation", "Mean_stdev", "Max_regret"]
+robustness_metrics = ["90_percentile_deviation", "Mean_stdev"]
 
+# Initial setup - Calculating Zero regret values
+
+results = []
+grouped = df_full.groupby(['Uncertainty set', 'scenario'])
+for (uncertainty_set, scenario), group in grouped:
+    for outcome in key_outcomes:
+        zero_regret_value = group[outcome].min()
+        results.append({
+            "Outcome": outcome,
+            "Uncertainty set": uncertainty_set,
+            "scenario": scenario,
+            "Zero regret": zero_regret_value
+        })
+
+zero_regret_df = pd.DataFrame(results)
+
+
+# Calculate other metrics for each policy
+all_policies = df_full["policy"].unique()
+all_uncertainty_sets = df_full["Uncertainty set"].unique()
+
+metrics_data = []
+long_metrics_data = []  # For creating the long format DataFrame
+
+for policy in all_policies:
+    if policy != "Reference policy":
+        for uncertainty_set in all_uncertainty_sets:
+            df_temp = df_full[(df_full["policy"] == policy) & (df_full["Uncertainty set"] == uncertainty_set)]
+            policy_data = {
+                "policy": policy,
+                "Policy type": df_temp["Policy type"].iloc[0],
+                "Uncertainty set": uncertainty_set
+            }
+
+            co2_outcome_data = df_temp["M1_CO2_TTW_total"]
+            satisficing_metric = (co2_outcome_data < 1.89).sum() / len(co2_outcome_data)
+
+            # Add satisficing metric to policy_data
+            policy_data["Satisficing metric M1_CO2_TTW_total"] = satisficing_metric
+
+            for outcome in key_outcomes:
+                outcome_data = df_temp[outcome]
+                ref_outcome_data = df_temp[df_temp["scenario"] == "Reference"][outcome]
+
+                metrics = {
+                    f"{metric} {outcome}": (
+                        outcome_data.quantile(0.9),
+                        ref_outcome_data.values[0],
+                        (outcome_data.quantile(0.9) - ref_outcome_data.values[0]) / abs(ref_outcome_data.values[0]),
+                        outcome_data.max(),
+                        outcome_data.mean(),
+                        outcome_data.std(),
+                        (outcome_data.mean()) * (outcome_data.std()),
+                        None  # Placeholder for Max_regret which will be calculated later
+                    )[all_robustness_metrics.index(metric)] for metric in all_robustness_metrics
+                }
+
+                policy_data.update(metrics)
+
+                regrets = abs(outcome_data - zero_regret_df.loc[
+                    (zero_regret_df["Uncertainty set"] == uncertainty_set) &
+                    (zero_regret_df["Outcome"] == outcome) &
+                    zero_regret_df["scenario"].isin(df_temp["scenario"].unique()),
+                    "Zero regret"
+                ].values)
+
+                policy_data[f"Max_regret {outcome}"] = regrets.max()
+                metrics[f"Max_regret {outcome}"] = regrets.max()  # Update the metrics dictionary
+
+                # Append data to long_metrics_data
+                for metric in all_robustness_metrics:
+                    long_metrics_data.append({
+                        "policy": policy,
+                        "Policy type": df_temp["Policy type"].iloc[0],
+                        "Uncertainty set": uncertainty_set,
+                        "Outcome": outcome,
+                        "Robustness metric": metric,
+                        "Value": metrics[f"{metric} {outcome}"]
+                    })
+
+            metrics_data.append(policy_data)
+
+policy_metrics_df = pd.DataFrame(metrics_data)
+policy_metrics_df_long = pd.DataFrame(long_metrics_data)
+policy_metrics_sta = policy_metrics_df[policy_metrics_df["Policy type"] == "STA"]
+policy_metrics_sta_long = policy_metrics_df_long[policy_metrics_df_long["Policy type"] == "STA"]
 # %% More plots on reference scenario performance
 # Pairplot outcomes on outcomes
 df_reference_subset = df_reference_subset.copy()
@@ -251,7 +342,7 @@ plt.legend(handles=handles, labels=labels, bbox_to_anchor=(2, 0.5), loc='center 
 plt.tight_layout()
 
 
-# %%Relationship between biofuels and electrification rate in reference scenario
+# %% Figure xx Relationship between biofuels and electrification rate in reference scenario
 plt.figure(figsize=(8, 5))
 sns.scatterplot(data=df_full[df_full["scenario"] == "Reference"], x='Electrified VKT share light vehicles',
                 y='M4_energy_use_bio', hue="Policy type", palette=color_coding, legend=False, s=25)
@@ -285,98 +376,7 @@ g = sns.pairplot(data=df_full, x_vars=vars_pairplot, kind="kde",
                  y_vars=vars_pairplot, hue="CO2 target not met",
                  palette=["green", "red"], plot_kws=dict(fill=True, alpha=0.5, levels=10, gridsize=100))
 
-# %% Calculate robustness metrics
-# Define robustness metrics
-all_robustness_metrics = ["90th percentile", "Reference", "90_percentile_deviation",
-                          "Max", "Mean", "Standard deviation", "Mean_stdev", "Max_regret"]
-robustness_metrics = ["90_percentile_deviation", "Mean_stdev"]
 
-# Initial setup - Calculating Zero regret values
-
-results = []
-grouped = df_full.groupby(['Uncertainty set', 'scenario'])
-for (uncertainty_set, scenario), group in grouped:
-    for outcome in key_outcomes:
-        zero_regret_value = group[outcome].min()
-        results.append({
-            "Outcome": outcome,
-            "Uncertainty set": uncertainty_set,
-            "scenario": scenario,
-            "Zero regret": zero_regret_value
-        })
-
-zero_regret_df = pd.DataFrame(results)
-
-
-# Calculate other metrics for each policy
-all_policies = df_full["policy"].unique()
-all_uncertainty_sets = df_full["Uncertainty set"].unique()
-
-metrics_data = []
-long_metrics_data = []  # For creating the long format DataFrame
-
-for policy in all_policies:
-    if policy != "Reference policy":
-        for uncertainty_set in all_uncertainty_sets:
-            df_temp = df_full[(df_full["policy"] == policy) & (df_full["Uncertainty set"] == uncertainty_set)]
-            policy_data = {
-                "policy": policy,
-                "Policy type": df_temp["Policy type"].iloc[0],
-                "Uncertainty set": uncertainty_set
-            }
-
-            co2_outcome_data = df_temp["M1_CO2_TTW_total"]
-            satisficing_metric = (co2_outcome_data < 1.89).sum() / len(co2_outcome_data)
-
-            # Add satisficing metric to policy_data
-            policy_data["Satisficing metric M1_CO2_TTW_total"] = satisficing_metric
-
-            for outcome in key_outcomes:
-                outcome_data = df_temp[outcome]
-                ref_outcome_data = df_temp[df_temp["scenario"] == "Reference"][outcome]
-
-                metrics = {
-                    f"{metric} {outcome}": (
-                        outcome_data.quantile(0.9),
-                        ref_outcome_data.values[0],
-                        (outcome_data.quantile(0.9) - ref_outcome_data.values[0]) / abs(ref_outcome_data.values[0]),
-                        outcome_data.max(),
-                        outcome_data.mean(),
-                        outcome_data.std(),
-                        (outcome_data.mean()) * (outcome_data.std()),
-                        None  # Placeholder for Max_regret which will be calculated later
-                    )[all_robustness_metrics.index(metric)] for metric in all_robustness_metrics
-                }
-
-                policy_data.update(metrics)
-
-                regrets = abs(outcome_data - zero_regret_df.loc[
-                    (zero_regret_df["Uncertainty set"] == uncertainty_set) &
-                    (zero_regret_df["Outcome"] == outcome) &
-                    zero_regret_df["scenario"].isin(df_temp["scenario"].unique()),
-                    "Zero regret"
-                ].values)
-
-                policy_data[f"Max_regret {outcome}"] = regrets.max()
-                metrics[f"Max_regret {outcome}"] = regrets.max()  # Update the metrics dictionary
-
-                # Append data to long_metrics_data
-                for metric in all_robustness_metrics:
-                    long_metrics_data.append({
-                        "policy": policy,
-                        "Policy type": df_temp["Policy type"].iloc[0],
-                        "Uncertainty set": uncertainty_set,
-                        "Outcome": outcome,
-                        "Robustness metric": metric,
-                        "Value": metrics[f"{metric} {outcome}"]
-                    })
-
-            metrics_data.append(policy_data)
-
-policy_metrics_df = pd.DataFrame(metrics_data)
-policy_metrics_df_long = pd.DataFrame(long_metrics_data)
-policy_metrics_sta = policy_metrics_df[policy_metrics_df["Policy type"] == "STA"]
-policy_metrics_sta_long = policy_metrics_df_long[policy_metrics_df_long["Policy type"] == "STA"]
 # %% FIGURE18 19 visualize relationship between robustness metrics
 # Use Whitegrid
 sns.set_style("whitegrid")
@@ -465,7 +465,7 @@ g._legend.set_bbox_to_anchor((0.7, 0.9, 0, 0))
 # Remove the legend title
 g._legend.set_title('')
 
-# %%
+# %% Figure 10
 
 
 df_long_el = df_full.melt(id_vars=["Policy type", "CO2 target not met"],
@@ -572,8 +572,53 @@ plt.tight_layout()
 
 # Despine to clean up the look of the plot
 g.despine()
+#
+
+# Create the FacetGrid with specified aspect ratio
+g = sns.FacetGrid(policy_metrics_df_long[policy_metrics_df_long["Robustness metric"].isin(robustness_metrics)],
+                  row='Robustness metric', col='Outcome', sharey=False, aspect=0.5)
+
+# Map the boxplot to the grid
+g.map_dataframe(sns.swarmplot, x="Policy type", y="Value", hue="Policy type",
+                palette=color_coding, dodge=False, s=3)
+
+# Set the y-axis label for each row
+# Adjust with actual row titles from 'rm_dict'
+row_titles = [rm_dict["90_percentile_deviation"], rm_dict["Mean_stdev"]]
+for ax, row_title in zip(g.axes[:, 0], row_titles):
+    ax.set_ylabel(row_title)
+
+# Set the x-axis labels for each column
+# Ensure that 'objective_outcomes' contains the column titles you want to display
+for ax, col_title in zip(g.axes[0, :], objective_outcomes):
+    ax.set_title(col_title)
+
+# Remove the default Seaborn FacetGrid titles and any redundant x-ticks
+for ax in g.axes.flat:
+    ax.set_xticks([])
+    ax.set_xlabel('')
+    ax.set_title('')
+
+# Set the FacetGrid titles again, without the row titles
+g.set_titles(col_template="{col_name}", row_template="")
+for ax in g.axes.flat:
+    title = ax.get_title()
+    if "|" in title:
+        new_title = title.replace(" | ", " ")  # Replace the separator with a space
+        ax.set_title(new_title)
+
+
+# Adjust the legend
+g.add_legend(title=None, bbox_to_anchor=(0.5, 1.05), loc='center', borderaxespad=0., ncol=3, fontsize=16)
+
+# Improve the layout
+plt.tight_layout()
+
+# Despine to clean up the look of the plot
+g.despine()
 # %% FIGURE 6
 # Create the boxplot
+sns.set_style("whitegrid")
 plt.figure(figsize=(6, 6))  # You can adjust the figure size as needed
 g = sns.boxplot(data=policy_metrics_df, x="Policy type", y="Satisficing metric M1_CO2_TTW_total", palette=color_coding)
 
@@ -599,6 +644,33 @@ sns.despine()
 # Use tight_layout to adjust subplot params for the figure area
 plt.tight_layout()
 
+
+# Create the corresponding jitterplot
+plt.figure(figsize=(6, 6))  # You can adjust the figure size as needed
+g = sns.swarmplot(data=policy_metrics_df, x="Policy type",
+                  y="Satisficing metric M1_CO2_TTW_total", palette=color_coding)
+
+# Remove the x-axis label and tick labels
+g.set_xlabel('')
+g.set_xticklabels([])
+
+# Add a custom y-axis label
+g.set_ylabel(rm_dict["Satisficing metric M1_CO2_TTW_total"], fontsize=20)
+
+# Get the unique policy types and create a patch handle for each
+policy_types = policy_metrics_df['Policy type'].unique()
+legend_handles = [mpatches.Patch(color=color_coding[pt], label=pt) for pt in policy_types]
+
+# Create the legend with rectangular handles
+plt.legend(handles=legend_handles, title=None, bbox_to_anchor=(0.5, 1.05),
+           loc='center', borderaxespad=0., ncol=3, fontsize=16, frameon=False)
+plt.ylim([0.5, 1])
+
+# Despine to clean up the look of the plot
+sns.despine()
+
+# Use tight_layout to adjust subplot params for the figure area
+plt.tight_layout()
 # %% Pairplot of robustness
 # Create a dictionary for renaming columns
 
@@ -1208,6 +1280,14 @@ for robustness_metric, plot_title in [
 ]:
     reference_robustness_scatter_plot(df_long[df_long["Metric"].isin(
         objective_outcomes)], robustness_metric, plot_title)
+
+# %% Reference scenario vs robustness
+for rm in ["90_percentile_deviation", "Mean_stdev"]:
+    for o in objective_outcomes:
+        x = "Reference "+o
+        y = rm+" "+o
+        plt.figure()
+        sns.scatterplot(policy_metrics_df, x=x, y=y, hue="Policy type", palette=color_coding)
 # %% Visualie relationship between mean and stdev
 for metric in key_outcomes:
     plt.figure()

@@ -42,8 +42,8 @@ if __name__ == "__main__":
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
     #policy_types = ["All levers", "No transport efficiency"]
-    #policy_types = ["No transport efficiency"]
-    policy_types = ["All levers"]
+    policy_types = ["No transport efficiency"]
+    #policy_types = ["All levers"]
 
     # Optimization parameters
     # Set epsilons
@@ -59,10 +59,10 @@ if __name__ == "__main__":
         RealParameter("X2_truck_demand", -0.3, 0.2, variable_name="C4"),
         RealParameter("X3_fossil_fuel_price", 0.4, 1.3, variable_name="C7"),
         RealParameter("X4_bio_fuel_price", 0.8, 2.2, variable_name="C8"),
-        RealParameter("X5_electricity_price", 0.5, 1.5, variable_name="C9"),
+        RealParameter("X5_electricity_price", 0.75, 1.25, variable_name="C9"),
         RealParameter("X6_car_electrification_rate", 0.35, 0.9, variable_name="C5"),
-        RealParameter("X7_truck_electrification_rate", 0.10, 0.60, variable_name="C6"),
-        RealParameter("X8_SAV_market_share", 0, 0.45, variable_name="C15"),
+        RealParameter("X7_truck_electrification_rate", 0.1, 0.60, variable_name="C6"),
+        RealParameter("X8_SAV_market_share", 0, 0.40, variable_name="C15"),
         RealParameter("X9_SAV_driving_cost", -.1, 1, variable_name="C18"),
         RealParameter("X10_SAV_energy_efficiency", 0, 0.25, variable_name="C17"),
         RealParameter("X11_VKT_per_SAV", .5, 2, variable_name="C16"),

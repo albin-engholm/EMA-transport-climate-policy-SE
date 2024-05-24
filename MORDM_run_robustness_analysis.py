@@ -22,8 +22,8 @@ if __name__ == "__main__":
         count = 0
         for policy_type in policy_types:
             if count == 0:
-                date = "2024-03-28"
-                nfe = 8000
+                date = "2024-03-29"
+                nfe = 1000000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
@@ -37,8 +37,8 @@ if __name__ == "__main__":
                     scenario_count = scenario_count+1
 
             if count == 1:
-                date = "2024-03-28"
-                nfe = 8000
+                date = "2024-03-31"
+                nfe = 1000000
                 t1 = f"./output_data/moea_results/{policy_type}{nfe}_nfe_directed_search_MORDM_{date}.p"
                 import pickle
                 results_list, convergence, scenarios, epsilons = pickle.load(
@@ -51,8 +51,8 @@ if __name__ == "__main__":
             count = count+1
 
         # Load candidate policy dataframe
-        date = "2024-03-28"
-        nfe = 8000
+        date = "2024-03-31"
+        nfe = 1000000
         filename = f"./output_data/candidate_policies/{date}_{nfe}candidate_policies.p"
         candidate_policy_data = pickle.load(open(filename, "rb"))
 
@@ -106,13 +106,32 @@ if __name__ == "__main__":
 
     # scenarios=[scenarios,reference]
     # %% Set up two runs for various uncertainty parameters #Run model - for open exploration
-    n_p = -2
+    n_p = -4
     # Run
     import time
     tic = time.perf_counter()
     results_list_OE = []
     uncertainty_sets = ["X", "XP"]
     uncertainty_sets = ["XP"]
+
+    model.uncertainties.clear()
+    model.uncertainties = [
+        RealParameter("X1_car_demand", -0.3, 0.2, variable_name="C3"),
+        RealParameter("X2_truck_demand", -0.3, 0.2, variable_name="C4"),
+        RealParameter("X3_fossil_fuel_price", 0.4, 1.3, variable_name="C7"),
+        RealParameter("X4_bio_fuel_price", 0.8, 2.2, variable_name="C8"),
+        RealParameter("X5_electricity_price", 0.75, 1.25, variable_name="C9"),
+        RealParameter("X6_car_electrification_rate", 0.35, 0.9, variable_name="C5"),
+        RealParameter("X7_truck_electrification_rate", 0.1, 0.60, variable_name="C6"),
+        RealParameter("X8_SAV_market_share", 0, 0.40, variable_name="C15"),
+        RealParameter("X9_SAV_driving_cost", -0.1, 1, variable_name="C18"),
+        RealParameter("X10_SAV_energy_efficiency", 0, 0.25, variable_name="C17"),
+        RealParameter("X11_VKT_per_SAV", 0.5, 2, variable_name="C16"),
+        RealParameter("X12_driverless_truck_market_share", 0, 0.60, variable_name="C11"),
+        RealParameter("X13_driverless_truck_driving_costs", -0.50, -0.20, variable_name="C14"),
+        RealParameter("X14_driverless_truck_energy_efficiency", -0.1, 0, variable_name="C12"),
+        RealParameter("X15_VKT_per_driverless_truck", 0.2, 0.5, variable_name="C13")
+    ]
     reference_scenario = {
         "X1_car_demand": 0,
         "X2_truck_demand": 0,
@@ -137,9 +156,9 @@ if __name__ == "__main__":
             model.uncertainties = [
                 RealParameter("R1_fuel_price_to_car_electrification", 0.1, 0.4, variable_name="C22"),
                 RealParameter("R2_fuel_price_to_truck_electrification", 0, 0.5, variable_name="C26"),
-                RealParameter("R3_fuel_price_to_car_fuel_consumption", -.15, -0.05, variable_name="C27"),
-                RealParameter("R4_car_driving_cost_to_car_ownership", -0.2, -0.1, variable_name="C23"),
-                RealParameter("R5_car_driving_cost_to_car_VKT", -0.4, -0.1, variable_name="C24"),
+                RealParameter("R3_fuel_price_to_car_fuel_consumption", -0.15, 0, variable_name="C27"),
+                RealParameter("R4_car_driving_cost_to_car_ownership", -0.2, -0, variable_name="C23"),
+                RealParameter("R5_car_driving_cost_to_car_VKT", -0.7, -0.1, variable_name="C24"),
                 RealParameter("R6_truck_driving_cost_to_truck_VKT", -1.2, -0.2, variable_name="C25")]
             reference_scenario.update({
                 "R1_fuel_price_to_car_electrification": 0.19,
@@ -161,7 +180,7 @@ if __name__ == "__main__":
         reference = Scenario("Reference", **reference_scenario)
         scenario_list.append(reference)
         # Sample additional scenarios
-        nr_scenarios_per_uncertainty = 4
+        nr_scenarios_per_uncertainty = 100
         nr_scenarios = int(nr_scenarios_per_uncertainty *
                            len(model.uncertainties.keys()))  # select number of scenarios (per policy)
         scenarios = samplers.sample_uncertainties(model, nr_scenarios, sampler=samplers.LHSSampler())
