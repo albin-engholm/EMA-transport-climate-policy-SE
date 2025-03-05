@@ -55,7 +55,7 @@ if __name__ == "__main__":
         nfe = 1000000
         filename = f"./output_data/candidate_policies/{date}_{nfe}candidate_policies.p"
         candidate_policy_data = pickle.load(open(filename, "rb"))
-
+        model.working_directory = "./models"
     # The model object already contains all information about levers and uncertainties
 
     # %% Create a list of all policies
@@ -213,7 +213,7 @@ if __name__ == "__main__":
         results = [outcomes, experiments]
         results_list_OE.append(results)
         # %% Save results
-    save_results = 1
+    save_results = 0
     if save_results == 1:
         from datetime import date
         from ema_workbench import save_results

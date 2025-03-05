@@ -21,11 +21,11 @@ import seaborn as sns
 # %% Load and prepare data
 
 #policy_types=["All levers", "No transport efficiency"]
-# policy_types = ["No transport efficiency"]  # ,
-policy_types = ["All levers"]
-date = '2024-03-29'  # Specify date the MORDM MOEA was started
+policy_types = ["No transport efficiency"]  # ,
+#policy_types = ["All levers"]
+date = '2025-03-05'  # Specify date the MORDM MOEA was started
 date_archive = date
-nfe_MOEA = 1000000  # Specify the number of nfes used for the MORDM MOEA
+nfe_MOEA = 10002  # Specify the number of nfes used for the MORDM MOEA
 
 all_archives = []
 

@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 # Load the data
-file_str = "1000000_All levers_2024-03-29"
-archives = ArchiveLogger.load_archives("./archives_animation/"+file_str+".tar.gz")
+file_str = "10002_No transport efficiency_2025-03-05"
+archives = ArchiveLogger.load_archives("./archives/"+file_str+".tar.gz")
 
 dpi = 300  # default dpi 300
 # Filter out empty dataframes
@@ -28,10 +28,10 @@ c_var = "M2_driving_cost_car"
 
 # Calculate global min and max for the axes and the color variable
 x_min = min(df[x_var].min() for df in dataframes)-0.5
-x_max = max(df[x_var].max() for df in dataframes)
-x_max = 13
+x_max = max(df[x_var].max() for df in dataframes)+0.5
+#x_max = 1
 y_min = min(df[y_var].min() for df in dataframes)-0.5
-y_max = max(df[y_var].max() for df in dataframes)
+y_max = max(df[y_var].max() for df in dataframes)+0.5
 y_max = 15
 c_min = min(df[c_var].min() for df in dataframes)
 c_max = max(df[c_var].max() for df in dataframes)
@@ -40,7 +40,9 @@ fig, ax = plt.subplots()
 
 # Prepare a scatter plot that will be updated at each frame.
 # Initialize with empty data, and map colors to M2 outcome
-scatter = ax.scatter([], [], c=[], s=15, cmap='viridis', vmin=c_min, vmax=c_max)
+scatter = ax.scatter(dataframes[0][x_var], dataframes[0][y_var],
+                     c=dataframes[0][c_var], s=15,
+                     cmap='viridis', vmin=c_min, vmax=c_max)
 
 # Add a color bar
 cbar = plt.colorbar(scatter, ax=ax, label=c_var)
@@ -62,7 +64,7 @@ def animate(i):
     ax.set_title(f'Number of function evaluations: {sorted(archives.keys())[i]}')
 
 
-ani = animation.FuncAnimation(fig, animate, frames=len(dataframes), interval=100, repeat=True)  # default interval 200
+ani = animation.FuncAnimation(fig, animate, frames=len(dataframes), interval=1, repeat=True)  # default interval 200
 
 # Save the animation
 ani.save('./figs/animation'+file_str+'.gif', writer='Pillow', fps=4, dpi=dpi)  # default fps 50
@@ -85,7 +87,7 @@ ax_static.set_ylabel(y_var)
 
 
 # Save the figure
-plt.savefig('./figs/MOEA_final_solutions.png', dpi=dpi)
+plt.savefig(f'./figs/MOEA_final_solutions {file_str}.png', dpi=dpi)
 
 # Optionally, show the plot
 plt.show()

@@ -39,6 +39,7 @@ if __name__ == "__main__":
 
     n_p = -4  # set # of parallel threads
     nfe = 1000000  # Set number of nfes  in optimization
+    #nfe = 10003
     date = date.today()  # Date to use for storing files
     # What set of policies should the MOEA be run for?
     #policy_types = ["All levers", "No transport efficiency"]
@@ -48,8 +49,11 @@ if __name__ == "__main__":
     # Optimization parameters
     # Set epsilons
     # Epsilons for M2-M5, 5% of range in pilot run M2 range ~14, M3 range 82, m4 range 11, m5 range 3
+    #Refernce scenario outcome values for M2-M4: 20, 170, 11.1, 7.1
+    reference_outcomes = [20,170,11.1,7.1]
     epsilons = [.75, 4, 0.55, 0.15]
-
+    epsilons = [x*3 for x in epsilons]
+    epsilons = [x*.1 for x in reference_outcomes]
     # Create instances of the crossover and mutation operators
     crossover = SBX(probability=1, distribution_index=20)
     mutation = PM(probability=1, distribution_index=20)
@@ -327,7 +331,7 @@ if __name__ == "__main__":
 
         # Save results to file?
         save_files = True
-        if save_files is True:
+        if save_files:
             filename = f"{policy_type}{nfe}_nfe_directed_search_MORDM_{date}"
             filename1 = filename+'.p'
             pickle.dump([results_list, convergence_list, df_scenarios, epsilons], open(
